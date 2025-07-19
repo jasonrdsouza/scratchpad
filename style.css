@@ -55,3 +55,36 @@ html {
 #vim-mode-indicator.visual {
     background-color: #b48ead; /* nord15 */
 }
+
+#js-result-display {
+    position: absolute;
+    bottom: 60px;
+    right: 20px;
+    max-width: 300px;
+    max-height: 200px;
+    padding: 10px;
+    border-radius: 5px;
+    font-family: "Fira Code", monospace;
+    font-size: 0.9rem;
+    white-space: pre-wrap;
+    overflow: auto;
+    z-index: 101;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+#js-result-display.success {
+    background-color: #a3be8c; /* nord14 green */
+    color: #2e3440; /* nord0 */
+    border: 2px solid #8fbcbb; /* nord7 */
+}
+
+#js-result-display.error {
+    background-color: #bf616a; /* nord11 red */
+    color: #eceff4; /* nord6 */
+    border: 2px solid #d08770; /* nord12 */
+}
+
+#js-result-display.show {
+    opacity: 1;
+}

@@ -61,9 +61,10 @@ Official CM6 packages only (with shorthand aliases):
 ## Technical Implementation Notes
 
 ### Key Files
-- `script.js` - Main application logic, editor setup, vim commands
-- `state-manager.js` - All persistence and state management functionality
-- `style.css` - UI styling with Nord color scheme
+- `script.js` - Editor setup, configuration, language definitions, UI initialization
+- `state-manager.js` - All persistence and state management functionality  
+- `commands.js` - All vim command implementations and JavaScript execution system
+- `style.css` - UI styling with Nord color scheme (including result popups)
 - `index.html` - Minimal HTML structure
 - `.prettierrc` - Code formatting configuration
 
@@ -160,6 +161,41 @@ users.map(u => u.name.toUpperCase());
 - **Prefer existing library patterns** - Don't reinvent vim behaviors, use the library's systems
 - **Optimize for the 90% case** - Single-line execution is most common, multi-line via registers
 - **Vim users expect vim patterns** - Yanking to registers feels natural vs. custom selection handling
+- **Modular command system** - Isolating vim commands makes the codebase more maintainable
+- **CSS over inline styles** - Keep styling in CSS files for better organization and maintenance
+
+## Current Architecture
+
+The project follows a modular architecture with clear separation of concerns:
+
+### **Module Responsibilities:**
+- **`script.js`** (117 lines) - Core editor setup
+  - Editor initialization and configuration
+  - Language definitions and mapping
+  - Mode indicator and UI event handling
+  - Minimal, focused on the "what"
+
+- **`state-manager.js`** (206 lines) - Complete persistence layer
+  - All localStorage operations with change detection
+  - Editor state serialization/deserialization  
+  - Vim history management
+  - Autosave coordination and initialization helpers
+
+- **`commands.js`** (295 lines) - Full vim command system
+  - All vim command implementations (`:w`, `:js`, `:eval`, `:registers`, `:set`)
+  - JavaScript code execution engine with error handling
+  - Register management and inspection
+  - Result display system
+
+## Documentation Policy
+
+**IMPORTANT**: This README must be updated after any:
+- **Architectural changes** - New files, moved functions, refactored modules
+- **New features** - Commands, language support, UI changes
+- **Development workflow changes** - Build process, formatting, dependencies
+- **Key learnings** - Technical insights, debugging discoveries, implementation patterns
+
+Keep the documentation current to maintain development velocity and onboarding effectiveness.
 
 ## Success Metrics
 

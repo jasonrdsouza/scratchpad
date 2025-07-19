@@ -15,22 +15,26 @@ import { go } from "@codemirror/lang-go";
 
 const LS_CONTENT_KEY = "vim-scratchpad-content";
 const LS_FT_KEY = "vim-scratchpad-filetype";
+const LS_VIM_COMMAND_HISTORY_KEY = "vim-command-history";
+const LS_VIM_SEARCH_HISTORY_KEY = "vim-search-history";
+
+const AUTOSAVE_INTERVAL_MS = 5000; // 5 seconds
 
 const modeIndicator = document.getElementById('vim-mode-indicator');
 
 function updateModeIndicator(modeObj) {
     if (!modeObj || !modeObj.mode) return;
-    
+
     const modeName = modeObj.mode;
     const subMode = modeObj.subMode;
-    
+
     // Create display text
     let displayText = `-- ${modeName.toUpperCase()}`;
     if (subMode) {
         displayText += ` ${subMode.toUpperCase()}`;
     }
     displayText += ' --';
-    
+
     modeIndicator.textContent = displayText;
     modeIndicator.className = 'vim-mode-indicator ' + modeName.toLowerCase();
 }
@@ -79,6 +83,11 @@ cm.on('vim-mode-change', (modeObj) => {
     updateModeIndicator(modeObj);
 });
 
+// Load vim history after vim is initialized
+setTimeout(() => {
+    loadVimHistory();
+}, 100); // Small delay to ensure vim is fully initialized
+
 console.log('Editor initialized with vim extension and mode listener');
 
 function setLanguage(view, lang) {
@@ -102,18 +111,67 @@ function saveContent() {
     console.log("Content saved.");
 }
 
+function saveVimHistory() {
+    try {
+        const vimGlobalState = Vim.getVimGlobalState_();
+
+        // Save command history (commands like :w, :set ft=js)
+        const commandHistory = vimGlobalState.exCommandHistoryController.historyBuffer;
+        localStorage.setItem(LS_VIM_COMMAND_HISTORY_KEY, JSON.stringify(commandHistory));
+
+        // Save search history (searches like /pattern, ?pattern)
+        const searchHistory = vimGlobalState.searchHistoryController.historyBuffer;
+        localStorage.setItem(LS_VIM_SEARCH_HISTORY_KEY, JSON.stringify(searchHistory));
+
+        console.log("Vim history saved.");
+    } catch (error) {
+        console.error("Failed to save vim history:", error);
+    }
+}
+
 function autoSave() {
+    // Save content if changed
     const currentContent = editorView.state.doc.toString();
     const storedContent = localStorage.getItem(LS_CONTENT_KEY);
-    
+
     if (currentContent !== storedContent) {
         localStorage.setItem(LS_CONTENT_KEY, currentContent);
         console.log("Auto-saved content.");
     }
+
+    // Save vim history
+    saveVimHistory();
 }
 
-// Set up autosave every 5 seconds
-setInterval(autoSave, 5000);
+function loadVimHistory() {
+    try {
+        const vimGlobalState = Vim.getVimGlobalState_();
+
+        // Load command history
+        const savedCommandHistory = localStorage.getItem(LS_VIM_COMMAND_HISTORY_KEY);
+        if (savedCommandHistory) {
+            const commandHistory = JSON.parse(savedCommandHistory);
+            vimGlobalState.exCommandHistoryController.historyBuffer = commandHistory;
+            vimGlobalState.exCommandHistoryController.iterator = commandHistory.length;
+        }
+
+        // Load search history
+        const savedSearchHistory = localStorage.getItem(LS_VIM_SEARCH_HISTORY_KEY);
+        if (savedSearchHistory) {
+            const searchHistory = JSON.parse(savedSearchHistory);
+            vimGlobalState.searchHistoryController.historyBuffer = searchHistory;
+            vimGlobalState.searchHistoryController.iterator = searchHistory.length;
+        }
+
+        console.log("Vim history loaded.");
+    } catch (error) {
+        console.error("Failed to load vim history:", error);
+    }
+}
+
+// Set up autosave (content + vim history) at regular intervals
+setInterval(autoSave, AUTOSAVE_INTERVAL_MS);
+window.addEventListener('beforeunload', autoSave); // Save on page unload
 
 Vim.defineEx("w", "w", () => saveContent());
 Vim.defineEx("q", "q", () => window.close());

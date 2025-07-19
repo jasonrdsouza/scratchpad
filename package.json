@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "vite",
+    "format": "prettier --write *.js *.css *.html",
+    "format:check": "prettier --check *.js *.css *.html",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -12,6 +14,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.6.2",
   "dependencies": {
+    "@codemirror/commands": "^6.8.1",
     "@codemirror/lang-css": "^6.3.1",
     "@codemirror/lang-go": "^6.0.1",
     "@codemirror/lang-html": "^6.4.9",
@@ -28,6 +31,7 @@
     "codemirror": "^6.0.2"
   },
   "devDependencies": {
+    "prettier": "^3.6.2",
     "vite": "^7.0.5"
   }
 }

@@ -1,11 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Fira+Code&display=swap");
 
-body, html {
+body,
+html {
     margin: 0;
     padding: 0;
     height: 100%;
     overflow: hidden;
-    font-family: 'Fira Code', monospace;
+    font-family: "Fira Code", monospace;
 }
 
 #editor {
@@ -18,7 +19,7 @@ body, html {
 }
 
 .cm-vim-panel input {
-    color: #D8DEE9; /* nord4 */
+    color: #d8dee9; /* nord4 */
     border: none;
     outline: none;
     font-size: 1.1rem;
@@ -26,7 +27,7 @@ body, html {
 
 /* Visual mode selection highlight */
 .cm-selectionBackground {
-    background-color: #8FBCBB !important; /* pastel cyan */
+    background-color: #8fbcbb !important; /* pastel cyan */
 }
 
 #vim-mode-indicator {
@@ -36,19 +37,21 @@ body, html {
     padding: 5px 15px;
     border-radius: 5px;
     font-size: 1.1rem;
-    color: #ECEFF4; /* nord6 */
-    transition: background-color 0.3s, color 0.3s;
+    color: #eceff4; /* nord6 */
+    transition:
+        background-color 0.3s,
+        color 0.3s;
     z-index: 100;
 }
 
 #vim-mode-indicator.normal {
-    background-color: #81A1C1; /* nord9 */
+    background-color: #81a1c1; /* nord9 */
 }
 
 #vim-mode-indicator.insert {
-    background-color: #A3BE8C; /* nord14 */
+    background-color: #a3be8c; /* nord14 */
 }
 
 #vim-mode-indicator.visual {
-    background-color: #B48EAD; /* nord15 */
+    background-color: #b48ead; /* nord15 */
 }

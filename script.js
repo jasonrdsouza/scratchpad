@@ -1,7 +1,6 @@
 import { EditorView, basicSetup } from "codemirror";
 import { EditorState, Compartment } from "@codemirror/state";
 import { vim, Vim, getCM } from "@replit/codemirror-vim";
-import { nord } from "cm6-theme-nord";
 import { markdown } from "@codemirror/lang-markdown";
 import { python } from "@codemirror/lang-python";
 import { javascript } from "@codemirror/lang-javascript";
@@ -21,6 +20,7 @@ import {
     setupAutosave
 } from "./state-manager.js";
 import { registerVimCommands } from "./commands.js";
+import { getTheme } from "./theme-manager.js";
 
 const modeIndicator = document.getElementById("vim-mode-indicator");
 
@@ -42,6 +42,7 @@ function updateModeIndicator(modeObj) {
 }
 
 let languageCompartment = new Compartment();
+let themeCompartment = new Compartment();
 
 const languages = {
     markdown: () => markdown(),
@@ -71,7 +72,7 @@ const initialFt = getInitialFiletype();
 const extensions = [
     basicSetup,
     vim(),
-    nord,
+    themeCompartment.of(getTheme()), // Use theme compartment for dynamic switching
     languageCompartment.of(
         initialFt && languages[initialFt] ? languages[initialFt]() : []
     )
@@ -113,4 +114,9 @@ console.log("Editor initialized with vim extension and mode listener");
 setupAutosave(editorView);
 
 // Register all vim commands
-registerVimCommands(editorView, languages, languageCompartment);
+registerVimCommands(
+    editorView,
+    languages,
+    languageCompartment,
+    themeCompartment
+);

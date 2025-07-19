@@ -7,7 +7,8 @@ This is a browser-based vim scratchpad for taking scratch notes and quick coding
 ### Core Features
 - **Vim editing** with all standard modes (normal, insert, visual)
 - **Syntax highlighting** for multiple programming languages
-- **Persistent storage** of content, vim command history, and undo/redo history
+- **Theme switching** - 13+ themes via `:colorscheme`, `:colo`, or `:theme` commands
+- **Persistent storage** of content, vim command history, undo/redo history, and theme preferences
 - **Autosave** functionality to prevent data loss (only saves changed data)
 - **Clean, minimal interface** with vim mode indicator
 - **JavaScript execution** - Execute code from vim registers with `:js` and `:eval`
@@ -64,6 +65,7 @@ Official CM6 packages only (with shorthand aliases):
 - `script.js` - Editor setup, configuration, language definitions, UI initialization
 - `state-manager.js` - All persistence and state management functionality  
 - `commands.js` - All vim command implementations and JavaScript execution system
+- `theme-manager.js` - Theme management with 13+ CodeMirror themes and persistence
 - `style.css` - UI styling with Nord color scheme (including result popups)
 - `index.html` - Minimal HTML structure
 - `.prettierrc` - Code formatting configuration
@@ -72,9 +74,10 @@ Official CM6 packages only (with shorthand aliases):
 The app persists:
 1. **Document content** (`vim-scratchpad-content`)
 2. **File type** (`vim-scratchpad-filetype`)
-3. **Vim command history** (`vim-command-history`)
-4. **Vim search history** (`vim-search-history`)
-5. **Complete editor state** (`editor-state`) including undo/redo history
+3. **Theme preference** (`vim-scratchpad-theme`)
+4. **Vim command history** (`vim-command-history`)
+5. **Vim search history** (`vim-search-history`)
+6. **Complete editor state** (`editor-state`) including undo/redo history
 
 ### Vim Integration
 - Use `getCM(editorView)` to access vim functionality
@@ -84,9 +87,27 @@ The app persists:
 - Access vim registers via `registerController.unnamedRegister.keyBuffer[0]`
 
 ### CodeMirror 6 Patterns
-- Use `Compartment` for dynamic language switching
+- Use `Compartment` for dynamic language and theme switching
 - Serialize state with `stateFields = { history: historyField }`
 - Handle state restoration gracefully with try/catch fallbacks
+
+### Theme Switching
+The scratchpad includes comprehensive theme support with 13+ professionally designed themes:
+
+#### Available Themes
+- **Light themes**: `solarized-light`, `github-light`, `material-light`, `gruvbox-light`, `tokyo-night-day`, `basic-light`
+- **Dark themes**: `nord` (default), `solarized-dark`, `github-dark`, `material-dark`, `gruvbox-dark`, `tokyo-night`, `tokyo-night-storm`, `basic-dark`
+
+#### Theme Commands
+- **Standard vim**: `:colorscheme <theme>` (e.g., `:colorscheme solarized-light`)
+- **Short form**: `:colo <theme>` (e.g., `:colo github-dark`)
+- **Alternative**: `:theme <theme>` (e.g., `:theme gruvbox-light`)
+- **List themes**: Any command without arguments shows current theme and available options
+
+#### Theme Persistence
+- Theme preferences are automatically saved to localStorage
+- Themes are restored on page load
+- Uses CodeMirror compartments for instant switching without losing editor state
 
 ### JavaScript Code Execution
 The scratchpad includes a powerful code execution system:
@@ -169,23 +190,29 @@ users.map(u => u.name.toUpperCase());
 The project follows a modular architecture with clear separation of concerns:
 
 ### **Module Responsibilities:**
-- **`script.js`** (117 lines) - Core editor setup
+- **`script.js`** - Core editor setup
   - Editor initialization and configuration
   - Language definitions and mapping
   - Mode indicator and UI event handling
-  - Minimal, focused on the "what"
+  - Theme and language compartment management
 
-- **`state-manager.js`** (206 lines) - Complete persistence layer
+- **`state-manager.js`** - Complete persistence layer
   - All localStorage operations with change detection
   - Editor state serialization/deserialization  
   - Vim history management
   - Autosave coordination and initialization helpers
 
-- **`commands.js`** (295 lines) - Full vim command system
-  - All vim command implementations (`:w`, `:js`, `:eval`, `:registers`, `:set`)
+- **`commands.js`** - Full vim command system
+  - All vim command implementations (`:w`, `:js`, `:eval`, `:registers`, `:set`, `:colorscheme`, `:theme`)
   - JavaScript code execution engine with error handling
   - Register management and inspection
   - Result display system
+
+- **`theme-manager.js`** - Theme management system
+  - 13+ professional CodeMirror themes with categorization
+  - Theme persistence and localStorage integration
+  - Dynamic theme switching via compartments
+  - Theme validation and information utilities
 
 ## Documentation Policy
 

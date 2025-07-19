@@ -1,5 +1,11 @@
 import { Vim } from "@replit/codemirror-vim";
 import { saveContent } from "./state-manager.js";
+import {
+    switchTheme,
+    getAvailableThemes,
+    getCurrentTheme,
+    getTheme
+} from "./theme-manager.js";
 
 /**
  * Get code from vim registers (unnamed or named)
@@ -156,7 +162,8 @@ function setLanguage(view, lang, languages, languageCompartment) {
 export function registerVimCommands(
     editorView,
     languages,
-    languageCompartment
+    languageCompartment,
+    themeCompartment
 ) {
     // Make editorView globally accessible for commands
     window.editorView = editorView;
@@ -295,4 +302,49 @@ export function registerVimCommands(
             showExecutionResult("Error accessing registers", true);
         }
     });
+
+    // Theme switching function (shared logic)
+    const switchThemeCommand = (cm, params) => {
+        try {
+            if (params.args && params.args.length > 0) {
+                const themeName = params.args[0];
+
+                // Use theme compartment for clean theme switching
+                if (!getAvailableThemes().includes(themeName)) {
+                    throw new Error(
+                        `Unknown theme: ${themeName}. Available themes: ${getAvailableThemes().join(", ")}`
+                    );
+                }
+
+                // Get the new theme and reconfigure
+                const newTheme = getTheme(themeName);
+                editorView.dispatch({
+                    effects: themeCompartment.reconfigure(newTheme)
+                });
+
+                // Save theme preference
+                localStorage.setItem("vim-scratchpad-theme", themeName);
+
+                console.log(`Switched to theme: ${themeName}`);
+                showExecutionResult(`Switched to theme: ${themeName}`, false);
+            } else {
+                // Show current theme and available themes
+                const current = getCurrentTheme();
+                const available = getAvailableThemes();
+                console.log(`Current theme: ${current}`);
+                console.log(`Available themes: ${available.join(", ")}`);
+                showExecutionResult(
+                    `Current: ${current}. Available: ${available.join(", ")}`,
+                    false
+                );
+            }
+        } catch (error) {
+            console.error("Theme error:", error);
+            showExecutionResult(error.message, true);
+        }
+    };
+
+    // Theme switching commands (vim standard + alternative)
+    Vim.defineEx("colorscheme", "colo", switchThemeCommand);
+    Vim.defineEx("theme", "theme", switchThemeCommand);
 }

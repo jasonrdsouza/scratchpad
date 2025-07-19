@@ -1,8 +1,7 @@
-# Vim Scratchpad
+# Scratchpad
+A browser based, web first, vim backed, AI assisted scratchpad for quick notes, brainstorming, and brain dumping.
 
 ## Project Overview
-
-This is a browser-based vim scratchpad for taking scratch notes and quick coding. It provides a familiar vim editing experience with persistent storage across browser sessions.
 
 ### Core Features
 - **Vim editing** with all standard modes (normal, insert, visual)

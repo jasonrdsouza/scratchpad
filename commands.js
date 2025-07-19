@@ -262,22 +262,21 @@ export function registerVimCommands(
                 }
             } else {
                 // Show all registers with content
-                console.log("=== VIM REGISTERS ===");
+                const registerData = {};
+                let registerCount = 0;
 
-                // Show unnamed register
+                // Collect unnamed register
                 const unnamedReg = registerController.unnamedRegister;
                 if (
                     unnamedReg &&
                     unnamedReg.keyBuffer &&
                     unnamedReg.keyBuffer.length > 0
                 ) {
-                    console.log(
-                        `"" (unnamed):`,
-                        JSON.stringify(unnamedReg.keyBuffer[0])
-                    );
+                    registerData['"" (unnamed)'] = unnamedReg.keyBuffer[0];
+                    registerCount++;
                 }
 
-                // Show named registers
+                // Collect named registers
                 const registers = registerController.registers;
                 for (const [regName, register] of Object.entries(registers)) {
                     if (
@@ -285,17 +284,41 @@ export function registerVimCommands(
                         register.keyBuffer &&
                         register.keyBuffer.length > 0
                     ) {
-                        console.log(
-                            `"${regName}":`,
-                            JSON.stringify(register.keyBuffer[0])
-                        );
+                        registerData[`"${regName}"`] = register.keyBuffer[0];
+                        registerCount++;
                     }
                 }
 
-                showExecutionResult(
-                    "Register contents printed to console",
-                    false
-                );
+                // Display formatted output
+                console.log("=== VIM REGISTERS ===");
+                if (registerCount > 0) {
+                    console.table(registerData);
+
+                    // Create a more readable summary for the popup
+                    const summary = Object.entries(registerData)
+                        .map(([reg, content]) => {
+                            // Truncate long content for display
+                            const truncatedContent =
+                                content.length > 50
+                                    ? content.substring(0, 47) + "..."
+                                    : content;
+                            // Replace newlines with ↵ for better display
+                            const displayContent = truncatedContent.replace(
+                                /\n/g,
+                                "↵"
+                            );
+                            return `${reg}: ${displayContent}`;
+                        })
+                        .join("\n");
+
+                    showExecutionResult(
+                        `Found ${registerCount} register(s):\n${summary}`,
+                        false
+                    );
+                } else {
+                    console.log("No registers contain data");
+                    showExecutionResult("No registers contain data", true);
+                }
             }
         } catch (error) {
             console.error("Error accessing registers:", error);

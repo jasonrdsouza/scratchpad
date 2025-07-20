@@ -1,39 +1,39 @@
 {
-  "name": "scratchpad",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "dev": "vite",
-    "format": "prettier --write *.js *.css *.html",
-    "format:check": "prettier --check *.js *.css *.html",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.6.2",
-  "dependencies": {
-    "@babel/runtime": "^7.27.6",
-    "@codemirror/commands": "^6.8.1",
-    "@codemirror/lang-css": "^6.3.1",
-    "@codemirror/lang-go": "^6.0.1",
-    "@codemirror/lang-html": "^6.4.9",
-    "@codemirror/lang-javascript": "^6.2.4",
-    "@codemirror/lang-json": "^6.0.2",
-    "@codemirror/lang-markdown": "^6.3.3",
-    "@codemirror/lang-python": "^6.2.1",
-    "@codemirror/lang-sql": "^6.9.0",
-    "@codemirror/lang-xml": "^6.1.0",
-    "@codemirror/lang-yaml": "^6.1.2",
-    "@codemirror/state": "^6.5.2",
-    "@replit/codemirror-vim": "^6.3.0",
-    "@uiw/codemirror-themes-all": "^4.24.1",
-    "cm6-theme-nord": "^0.2.0",
-    "codemirror": "^6.0.2"
-  },
-  "devDependencies": {
-    "prettier": "^3.6.2",
-    "vite": "^7.0.5"
-  }
+    "name": "scratchpad",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "dev": "vite",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "packageManager": "pnpm@10.6.2",
+    "dependencies": {
+        "@babel/runtime": "^7.27.6",
+        "@codemirror/commands": "^6.8.1",
+        "@codemirror/lang-css": "^6.3.1",
+        "@codemirror/lang-go": "^6.0.1",
+        "@codemirror/lang-html": "^6.4.9",
+        "@codemirror/lang-javascript": "^6.2.4",
+        "@codemirror/lang-json": "^6.0.2",
+        "@codemirror/lang-markdown": "^6.3.3",
+        "@codemirror/lang-python": "^6.2.1",
+        "@codemirror/lang-sql": "^6.9.0",
+        "@codemirror/lang-xml": "^6.1.0",
+        "@codemirror/lang-yaml": "^6.1.2",
+        "@codemirror/state": "^6.5.2",
+        "@replit/codemirror-vim": "^6.3.0",
+        "@uiw/codemirror-themes-all": "^4.24.1",
+        "cm6-theme-nord": "^0.2.0",
+        "codemirror": "^6.0.2"
+    },
+    "devDependencies": {
+        "prettier": "^3.6.2",
+        "vite": "^7.0.5"
+    }
 }

@@ -10,7 +10,7 @@ A browser based, web first, vim backed, AI assisted scratchpad for quick notes, 
 - **Persistent storage** of content, vim command history, undo/redo history, and theme preferences
 - **Autosave** functionality to prevent data loss (only saves changed data)
 - **Clean, minimal interface** with vim mode indicator
-- **JavaScript execution** - Execute code from vim registers with `:js` and `:eval`
+- **JavaScript execution** - Execute code from vim registers with `:js` and `:eval`, results stored in `"r` register
 - **Register management** - Store and execute code snippets using vim's register system
 
 ## Development Preferences
@@ -112,11 +112,14 @@ The scratchpad includes comprehensive theme support with 13+ professionally desi
 The scratchpad includes a powerful code execution system:
 
 #### Basic Usage
+- **Inline code**: Run `:js 1+2+3` directly for simple expressions
 - **Current line**: Run `:js` or `:eval` on any line with JavaScript
 - **Visual selection**: Select code, yank with `y`, then run `:js`
 - **Named registers**: Yank to register (`"ay`), execute with `:js a`
 
 #### Advanced Features
+- **Result storage**: All execution results automatically stored in `"r` register
+- **Result pasting**: Use `"rp` to paste the last result into your buffer
 - **Register inspection**: Use `:registers` to view all register contents
 - **Error handling**: Syntax errors and runtime errors are displayed safely
 - **Result display**: Results appear in a styled popup with Nord theme colors
@@ -124,8 +127,8 @@ The scratchpad includes a powerful code execution system:
 
 #### Workflow Examples
 ```javascript
-// Single line - just run :js
-Math.random() * 100
+// Inline execution - results stored in "r register
+:js Math.PI * 2
 
 // Multi-line - select, yank, :js
 const x = 5;
@@ -135,6 +138,10 @@ x + y
 // Named registers - select, "ay, then :js a
 const users = [{name: "Alice"}, {name: "Bob"}];
 users.map(u => u.name.toUpperCase());
+
+// View and paste previous results
+:registers r  // view last result
+"rp          // paste result into buffer
 ```
 
 ## Development Workflow

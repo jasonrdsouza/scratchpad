@@ -8,6 +8,42 @@ import {
 } from "./theme-manager.js";
 
 /**
+ * Store result in results register ("r) using proper vim API
+ */
+function storeResultInRegister(resultString) {
+    try {
+        const vimGlobalState = Vim.getVimGlobalState_();
+        const registerController = vimGlobalState.registerController;
+
+        // Use vim's proper register API to store in results register
+        if (registerController.pushText) {
+            // Use vim's built-in register API - this works properly with pasting
+            registerController.pushText(
+                "r",
+                "char",
+                resultString,
+                false,
+                false
+            );
+            console.log(`Stored result in register ("r): ${resultString}`);
+        } else {
+            // Fallback to manual register manipulation with proper structure
+            if (!registerController.registers["r"]) {
+                registerController.registers["r"] = {
+                    keyBuffer: [],
+                    linewise: false
+                };
+            }
+            registerController.registers["r"].keyBuffer = [resultString];
+            registerController.registers["r"].linewise = false;
+            console.log(`Stored result in register ("r): ${resultString}`);
+        }
+    } catch (error) {
+        console.error("Failed to store result in register:", error);
+    }
+}
+
+/**
  * Get code from vim registers (unnamed or named)
  */
 function getCodeFromRegister(registerName = null) {
@@ -85,6 +121,9 @@ function executeJavaScript(code) {
         } else {
             displayResult = String(result);
         }
+
+        // Store result in results register for future use
+        storeResultInRegister(displayResult);
 
         // Show result in console and as a temporary indicator
         console.log("JavaScript result:", result);
@@ -186,40 +225,45 @@ export function registerVimCommands(
         }
     });
 
+    // Shared JavaScript execution command handler
+    const handleJavaScriptCommand = (cm, params) => {
+        try {
+            if (params.args && params.args.length > 0) {
+                // Check if first arg looks like a register name (single character)
+                const firstArg = params.args[0];
+                if (
+                    firstArg.length === 1 &&
+                    /^[a-zA-Z0-9"=_]$/.test(firstArg)
+                ) {
+                    // Treat as register name
+                    const code = getCodeFromRegister(firstArg);
+                    if (code.trim()) {
+                        executeJavaScript(code);
+                    } else {
+                        showExecutionResult("No code found in register", true);
+                    }
+                } else {
+                    // Treat as inline code - join all args
+                    const code = params.args.join(" ");
+                    executeJavaScript(code);
+                }
+            } else {
+                // No args - get from unnamed register (yanked code)
+                const code = getCodeFromRegister(null);
+                if (code.trim()) {
+                    executeJavaScript(code);
+                } else {
+                    showExecutionResult("No code found", true);
+                }
+            }
+        } catch (error) {
+            showExecutionResult(error.message, true);
+        }
+    };
+
     // JavaScript execution commands
-    Vim.defineEx("js", "js", (cm, params) => {
-        try {
-            // Check if a register name was provided
-            const registerName =
-                params.args && params.args.length > 0 ? params.args[0] : null;
-            const code = getCodeFromRegister(registerName);
-
-            if (code.trim()) {
-                executeJavaScript(code);
-            } else {
-                showExecutionResult("No code found", true);
-            }
-        } catch (error) {
-            showExecutionResult(error.message, true);
-        }
-    });
-
-    Vim.defineEx("eval", "eval", (cm, params) => {
-        try {
-            // Check if a register name was provided
-            const registerName =
-                params.args && params.args.length > 0 ? params.args[0] : null;
-            const code = getCodeFromRegister(registerName);
-
-            if (code.trim()) {
-                executeJavaScript(code);
-            } else {
-                showExecutionResult("No code found", true);
-            }
-        } catch (error) {
-            showExecutionResult(error.message, true);
-        }
-    });
+    Vim.defineEx("js", "js", handleJavaScriptCommand);
+    Vim.defineEx("eval", "eval", handleJavaScriptCommand);
 
     // Register inspection command
     Vim.defineEx("registers", "registers", (cm, params) => {

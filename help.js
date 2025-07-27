@@ -100,6 +100,36 @@ const helpContent = {
             "  :whitespace on     - Show all whitespace",
             "  :whitespace off    - Hide whitespace"
         ]
+    },
+
+    theme: {
+        title: ":theme COMMAND HELP",
+        content: [
+            "The :theme and :colorscheme commands change the editor theme:",
+            "",
+            "Usage:",
+            "  :theme             - Show current theme and available options",
+            "  :theme <name>      - Switch to specified theme",
+            "  :colorscheme       - Same as :theme (vim standard)",
+            "  :colo <name>       - Short form of :colorscheme",
+            "",
+            "Available Themes:",
+            "Light themes:",
+            "  • solarized-light  • github-light     • material-light",
+            "  • gruvbox-light    • tokyo-night-day  • basic-light",
+            "",
+            "Dark themes:",
+            "  • nord (default)   • solarized-dark   • github-dark",
+            "  • material-dark    • gruvbox-dark     • tokyo-night",
+            "  • tokyo-night-storm • basic-dark",
+            "",
+            "Examples:",
+            "  :theme nord        - Switch to Nord theme",
+            "  :colo solarized-light - Switch to Solarized Light",
+            "  :colorscheme       - Show current theme and options",
+            "",
+            "Note: Theme preference is automatically saved and restored."
+        ]
     }
 };
 
@@ -109,7 +139,9 @@ const helpContent = {
 const helpAliases = {
     py: "python",
     js: "javascript",
-    eval: "javascript"
+    eval: "javascript",
+    colorscheme: "theme",
+    colo: "theme"
 };
 
 /**

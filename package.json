@@ -30,7 +30,8 @@
         "@replit/codemirror-vim": "^6.3.0",
         "@uiw/codemirror-themes-all": "^4.24.1",
         "cm6-theme-nord": "^0.2.0",
-        "codemirror": "^6.0.2"
+        "codemirror": "^6.0.2",
+        "pyodide": "^0.28.0"
     },
     "devDependencies": {
         "prettier": "^3.6.2",

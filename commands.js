@@ -238,6 +238,14 @@ export function registerVimCommands(
         handleExecutionCommand(cm, params, "javascript")
     );
 
+    // Python execution commands
+    Vim.defineEx("py", "py", (cm, params) =>
+        handleExecutionCommand(cm, params, "python")
+    );
+    Vim.defineEx("python", "python", (cm, params) =>
+        handleExecutionCommand(cm, params, "python")
+    );
+
     // Register inspection command
     Vim.defineEx("registers", "registers", (cm, params) => {
         try {

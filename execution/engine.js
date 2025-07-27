@@ -9,6 +9,7 @@ import { formatResult } from "./formatters.js";
 import { storeResult } from "./registers.js";
 import { Executor } from "./executor.js";
 import { JavaScriptExecutor } from "./javascript.js";
+import { PythonExecutor } from "./python.js";
 
 /**
  * Main execution engine that coordinates different language executors
@@ -21,6 +22,8 @@ export class ExecutionEngine {
         // Register built-in executors
         this.registerExecutor("javascript", new JavaScriptExecutor());
         this.registerExecutor("js", new JavaScriptExecutor()); // Alias
+        this.registerExecutor("python", new PythonExecutor());
+        this.registerExecutor("py", new PythonExecutor()); // Alias
         this.setDefaultLanguage("javascript");
     }
 

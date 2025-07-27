@@ -11,6 +11,7 @@ import { sql } from "@codemirror/lang-sql";
 import { yaml } from "@codemirror/lang-yaml";
 import { xml } from "@codemirror/lang-xml";
 import { go } from "@codemirror/lang-go";
+import { highlightWhitespace } from "@codemirror/view";
 import {
     LS_FT_KEY,
     loadVimHistory,
@@ -43,6 +44,7 @@ function updateModeIndicator(modeObj) {
 
 let languageCompartment = new Compartment();
 let themeCompartment = new Compartment();
+let whitespaceCompartment = new Compartment();
 
 const languages = {
     markdown: () => markdown(),
@@ -75,7 +77,8 @@ const extensions = [
     themeCompartment.of(getTheme()), // Use theme compartment for dynamic switching
     languageCompartment.of(
         initialFt && languages[initialFt] ? languages[initialFt]() : []
-    )
+    ),
+    whitespaceCompartment.of([]) // Start with whitespace hidden
 ];
 
 let editorView;
@@ -118,5 +121,6 @@ registerVimCommands(
     editorView,
     languages,
     languageCompartment,
-    themeCompartment
+    themeCompartment,
+    whitespaceCompartment
 );

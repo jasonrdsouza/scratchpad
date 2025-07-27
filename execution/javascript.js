@@ -51,7 +51,6 @@ export class JavaScriptExecutor extends Executor {
     getDisplayName() {
         return "JavaScript";
     }
-
 }
 
 // Export convenience instance

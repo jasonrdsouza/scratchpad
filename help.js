@@ -1,6 +1,6 @@
 /**
  * Help System - Modular help documentation for all scratchpad commands
- * 
+ *
  * Provides centralized help management with easy extensibility for new commands.
  */
 
@@ -14,20 +14,20 @@ const helpContent = {
             "Execute any valid Python expression or statement",
             "• Supports Python 3.13.2 via Pyodide WebAssembly runtime",
             "• Pre-loaded packages: numpy, pandas, requests",
-            "• Results are automatically stored in \"r register",
+            '• Results are automatically stored in "r register',
             "• First execution may take a moment to load the Python runtime",
             "",
             "Examples:",
-            "  :py print(\"Hello, World!\")",
+            '  :py print("Hello, World!")',
             "  :py [x**2 for x in range(5)]",
             "  :py import math; math.pi * 2",
             "  :python sum([1, 2, 3, 4, 5])",
             "  :py import numpy as np; np.array([1,2,3])",
-            "  :py import pandas as pd; pd.DataFrame({\"a\": [1,2,3]})",
-            "  :py import requests; requests.get(\"https://httpbin.org/json\").json()",
+            '  :py import pandas as pd; pd.DataFrame({"a": [1,2,3]})',
+            '  :py import requests; requests.get("https://httpbin.org/json").json()',
             "",
             "Note: Additional packages can be installed using micropip:",
-            "  :py import micropip; await micropip.install(\"matplotlib\")"
+            '  :py import micropip; await micropip.install("matplotlib")'
         ]
     },
 
@@ -37,7 +37,7 @@ const helpContent = {
             "Execute any valid JavaScript expression or statement",
             "• Access browser APIs: console, window, document, etc.",
             "• Use modern JavaScript features: async/await, arrow functions, etc.",
-            "• Results are automatically stored in \"r register",
+            '• Results are automatically stored in "r register',
             "",
             "Examples:",
             "  :js Math.PI * 2",
@@ -69,10 +69,36 @@ const helpContent = {
             "",
             "Supported Table Formats:",
             "  • CSV (comma-separated)",
-            "  • TSV (tab-separated)", 
+            "  • TSV (tab-separated)",
             "  • Pipe-delimited (|)",
             "  • Semicolon-delimited (;)",
             "  • Space-separated (multiple spaces)"
+        ]
+    },
+
+    whitespace: {
+        title: ":whitespace COMMAND HELP",
+        content: [
+            "The :whitespace command toggles visibility of whitespace characters:",
+            "",
+            "Usage:",
+            "  :whitespace        - Toggle whitespace visibility",
+            "  :whitespace toggle - Toggle whitespace visibility (explicit)",
+            "  :whitespace on     - Show whitespace characters",
+            "  :whitespace show   - Show whitespace characters (alias)",
+            "  :whitespace off    - Hide whitespace characters",
+            "  :whitespace hide   - Hide whitespace characters (alias)",
+            "",
+            "What it shows:",
+            "  • Spaces appear as dots (·)",
+            "  • Tabs appear as arrows (→)",
+            "  • Helps identify indentation issues",
+            "  • Useful for debugging spacing problems",
+            "",
+            "Examples:",
+            "  :whitespace        - Toggle on/off",
+            "  :whitespace on     - Show all whitespace",
+            "  :whitespace off    - Hide whitespace"
         ]
     }
 };
@@ -82,7 +108,7 @@ const helpContent = {
  */
 const helpAliases = {
     py: "python",
-    js: "javascript", 
+    js: "javascript",
     eval: "javascript"
 };
 
@@ -124,6 +150,7 @@ export function getMainHelp(supportedLanguages) {
         "  :colo <theme>  - Change theme (short form)",
         "  :theme <theme> - Change theme (alternative)",
         "  :set ft=<lang> - Set file type for syntax highlighting",
+        "  :whitespace    - Toggle whitespace visibility (spaces, tabs)",
         "",
         "Other Commands:",
         "  :registers     - Show all vim registers",
@@ -148,20 +175,16 @@ export function getMainHelp(supportedLanguages) {
  */
 export function getTopicHelp(topic) {
     const normalizedTopic = topic.toLowerCase();
-    
+
     // Check for alias first, then direct topic
     const contentKey = helpAliases[normalizedTopic] || normalizedTopic;
     const helpTopic = helpContent[contentKey];
-    
+
     if (!helpTopic) {
         return null;
     }
-    
-    return [
-        `=== ${helpTopic.title} ===`,
-        "",
-        ...helpTopic.content
-    ].join("\n");
+
+    return [`=== ${helpTopic.title} ===`, "", ...helpTopic.content].join("\n");
 }
 
 /**

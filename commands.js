@@ -10,6 +10,7 @@ import { executionEngine } from "./execution/engine.js";
 import { formatForConsole } from "./execution/formatters.js";
 import { formatText } from "./formatting.js";
 import { getMainHelp, getTopicHelp, getAvailableTopics } from "./help.js";
+import { highlightWhitespace } from "@codemirror/view";
 
 /**
  * Get code from vim registers (unnamed or named)
@@ -179,7 +180,8 @@ export function registerVimCommands(
     editorView,
     languages,
     languageCompartment,
-    themeCompartment
+    themeCompartment,
+    whitespaceCompartment
 ) {
     // Make editorView globally accessible for commands
     window.editorView = editorView;
@@ -498,7 +500,7 @@ export function registerVimCommands(
                     console.log(`Help for ${topic}:`);
                     console.log(helpText);
                     showExecutionResult(helpText, false);
-                } 
+                }
                 // Unknown topic
                 else {
                     showExecutionResult(
@@ -508,15 +510,54 @@ export function registerVimCommands(
                 }
             } else {
                 // Show main help
-                const supportedLanguages = executionEngine.getSupportedLanguages();
+                const supportedLanguages =
+                    executionEngine.getSupportedLanguages();
                 const helpSummary = getMainHelp(supportedLanguages);
-                
+
                 console.log(helpSummary);
                 showExecutionResult(helpSummary, false);
             }
         } catch (error) {
             console.error("Help error:", error);
             showExecutionResult("Error displaying help", true);
+        }
+    });
+
+    // Whitespace visibility toggle
+    let whitespaceVisible = false;
+    Vim.defineEx("whitespace", "whitespace", (cm, params) => {
+        try {
+            if (params.args && params.args.length > 0) {
+                const action = params.args[0].toLowerCase();
+                if (action === "on" || action === "show") {
+                    whitespaceVisible = true;
+                } else if (action === "off" || action === "hide") {
+                    whitespaceVisible = false;
+                } else if (action === "toggle") {
+                    whitespaceVisible = !whitespaceVisible;
+                } else {
+                    throw new Error(
+                        `Unknown whitespace action: ${action}. Use 'on', 'off', or 'toggle'.`
+                    );
+                }
+            } else {
+                // No args - toggle by default
+                whitespaceVisible = !whitespaceVisible;
+            }
+
+            // Update the editor
+            editorView.dispatch({
+                effects: whitespaceCompartment.reconfigure(
+                    whitespaceVisible ? [highlightWhitespace()] : []
+                )
+            });
+
+            const status = whitespaceVisible ? "visible" : "hidden";
+            console.log(`Whitespace is now ${status}`);
+            showExecutionResult(`Whitespace is now ${status}`, false);
+        } catch (error) {
+            console.error("Whitespace toggle error:", error);
+            showExecutionResult(error.message, true);
         }
     });
 

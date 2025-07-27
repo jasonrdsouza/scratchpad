@@ -116,7 +116,6 @@ export class PythonExecutor extends Executor {
         return "Python";
     }
 
-
     /**
      * Check if Pyodide is loaded and ready
      * @returns {boolean} True if ready to execute

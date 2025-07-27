@@ -116,7 +116,6 @@ export class PythonExecutor extends Executor {
         return "Python";
     }
 
-
     /**
      * Get help text for this executor
      * @returns {string} Help text
@@ -151,7 +150,6 @@ Note: Additional packages can be installed using micropip:
     isReady() {
         return this.pyodide !== null && !this.isLoading;
     }
-
 }
 
 // Export convenience instance

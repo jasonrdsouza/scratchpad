@@ -8,6 +8,7 @@ import {
 } from "./theme-manager.js";
 import { executionEngine } from "./execution/engine.js";
 import { formatForConsole } from "./execution/formatters.js";
+import { formatText } from "./formatting.js";
 
 /**
  * Get code from vim registers (unnamed or named)
@@ -415,6 +416,73 @@ export function registerVimCommands(
             showExecutionResult(error.message, true);
         }
     };
+
+    // Format command for JSON pretty-printing
+    Vim.defineEx("fmt", "fmt", (cm, params) => {
+        try {
+            // Get the text to format
+            const state = window.editorView.state;
+            const selection = state.selection.main;
+
+            let textToFormat;
+            let replaceRange;
+
+            // Check if we have a vim range (like :'<,'>fmt or :10,20fmt)
+            if (params.line !== undefined && params.lineEnd !== undefined) {
+                // Use vim range - convert from 1-based line numbers to 0-based positions
+                const startLine = Math.max(0, params.line - 1);
+                const endLine = Math.min(
+                    state.doc.lines - 1,
+                    params.lineEnd - 1
+                );
+
+                const fromPos = state.doc.line(startLine + 1).from;
+                const toPos = state.doc.line(endLine + 1).to;
+
+                textToFormat = state.doc.sliceString(fromPos, toPos);
+                replaceRange = { from: fromPos, to: toPos };
+            } else if (!selection.empty) {
+                // Format visual selection
+                textToFormat = state.doc.sliceString(
+                    selection.from,
+                    selection.to
+                );
+                replaceRange = { from: selection.from, to: selection.to };
+            } else {
+                // Format current line
+                const line = state.doc.lineAt(selection.head);
+                textToFormat = line.text;
+                replaceRange = { from: line.from, to: line.to };
+            }
+
+            // Determine format type (default to auto-detect)
+            const formatType =
+                params.args && params.args.length > 0
+                    ? params.args[0].toLowerCase()
+                    : "auto";
+
+            // Format the text using the formatting module
+            const result = formatText(textToFormat, formatType);
+
+            // Replace the text in the editor
+            window.editorView.dispatch({
+                changes: {
+                    from: replaceRange.from,
+                    to: replaceRange.to,
+                    insert: result.text
+                }
+            });
+
+            // Show success message with detected format type
+            showExecutionResult(
+                `Formatted as ${result.format.toUpperCase()}`,
+                false
+            );
+        } catch (error) {
+            console.error("Format error:", error);
+            showExecutionResult(`Format error: ${error.message}`, true);
+        }
+    });
 
     // Help command
     Vim.defineEx("help", "help", (cm, params) => {

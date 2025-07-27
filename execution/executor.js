@@ -29,5 +29,4 @@ export class Executor {
     getDisplayName() {
         return this.language;
     }
-
 }

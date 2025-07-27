@@ -52,7 +52,6 @@ export class JavaScriptExecutor extends Executor {
         return "JavaScript";
     }
 
-
     /**
      * Get help text for this executor
      * @returns {string} Help text

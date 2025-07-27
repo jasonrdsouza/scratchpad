@@ -115,8 +115,13 @@ function showExecutionResult(result, isError = false) {
     // Show the result
     resultDisplay.classList.add("show");
 
-    // Auto-hide after 5 seconds
-    setTimeout(() => {
+    // Clear any existing timer
+    if (resultDisplay.hideTimer) {
+        clearTimeout(resultDisplay.hideTimer);
+    }
+
+    // Function to hide the result
+    const hideResult = () => {
         if (resultDisplay) {
             resultDisplay.classList.remove("show");
             setTimeout(() => {
@@ -125,7 +130,26 @@ function showExecutionResult(result, isError = false) {
                 }
             }, 300);
         }
-    }, 5000);
+    };
+
+    // Function to start the hide timer
+    const startHideTimer = () => {
+        resultDisplay.hideTimer = setTimeout(hideResult, 5000);
+    };
+
+    // Add hover event listeners to pause/resume auto-hide
+    resultDisplay.addEventListener("mouseenter", () => {
+        if (resultDisplay.hideTimer) {
+            clearTimeout(resultDisplay.hideTimer);
+        }
+    });
+
+    resultDisplay.addEventListener("mouseleave", () => {
+        startHideTimer();
+    });
+
+    // Start the initial timer
+    startHideTimer();
 }
 
 /**

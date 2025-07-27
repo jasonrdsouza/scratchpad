@@ -54,10 +54,16 @@ export class PythonExecutor extends Executor {
             // Import loadPyodide from npm package
             const { loadPyodide } = await import("pyodide");
 
-            // Initialize Pyodide with local files (no indexURL needed)
-            const pyodide = await loadPyodide();
+            // Initialize Pyodide with CDN files to avoid SRI integrity issues
+            const pyodide = await loadPyodide({
+                indexURL: "https://cdn.jsdelivr.net/pyodide/v0.28.0/full/"
+            });
 
-            console.log("Pyodide loaded successfully!");
+            // Pre-load common Python packages
+            console.log("Loading Python packages: numpy, pandas, requests...");
+            await pyodide.loadPackage(["numpy", "pandas", "requests"]);
+
+            console.log("Pyodide loaded successfully with packages!");
             return pyodide;
         } catch (error) {
             console.error("Failed to load Pyodide:", error);
@@ -150,7 +156,7 @@ export class PythonExecutor extends Executor {
 Python Execution Help:
 • Execute any valid Python expression or statement
 • Supports Python 3.13.2 via Pyodide WebAssembly runtime
-• Access to many Python standard library modules
+• Pre-loaded packages: numpy, pandas, requests
 • Results are automatically stored in "${getResultsRegister()}" register
 • First execution may take a moment to load the Python runtime
 
@@ -159,9 +165,12 @@ Examples:
   :py [x**2 for x in range(5)]
   :py import math; math.pi * 2
   :python sum([1, 2, 3, 4, 5])
+  :py import numpy as np; np.array([1,2,3])
+  :py import pandas as pd; pd.DataFrame({"a": [1,2,3]})
+  :py import requests; requests.get("https://httpbin.org/json").json()
 
-Note: Some packages may require installation using micropip:
-  :py import micropip; await micropip.install("numpy")
+Note: Additional packages can be installed using micropip:
+  :py import micropip; await micropip.install("matplotlib")
         `.trim();
     }
 

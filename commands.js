@@ -392,6 +392,77 @@ export function registerVimCommands(
         }
     };
 
+    // Help command
+    Vim.defineEx("help", "help", (cm, params) => {
+        try {
+            if (params.args && params.args.length > 0) {
+                const language = params.args[0].toLowerCase();
+                const supportedLanguages =
+                    executionEngine.getSupportedLanguages();
+
+                if (supportedLanguages.includes(language)) {
+                    // Get the executor for this language
+                    const executor = executionEngine.executors.get(language);
+                    if (
+                        executor &&
+                        typeof executor.getHelpText === "function"
+                    ) {
+                        const helpText = executor.getHelpText();
+                        console.log(`Help for ${executor.getDisplayName()}:`);
+                        console.log(helpText);
+                        showExecutionResult(helpText, false);
+                    } else {
+                        showExecutionResult(
+                            `No help available for ${language}`,
+                            true
+                        );
+                    }
+                } else {
+                    showExecutionResult(
+                        `Unknown language: ${language}. Available: ${supportedLanguages.join(", ")}`,
+                        true
+                    );
+                }
+            } else {
+                // Show general help with all available executors
+                const supportedLanguages =
+                    executionEngine.getSupportedLanguages();
+                const helpSummary = [
+                    "=== SCRATCHPAD HELP ===",
+                    "",
+                    "Code Execution:",
+                    "  :js <code>     - Execute JavaScript",
+                    "  :py <code>     - Execute Python",
+                    "  :python <code> - Execute Python (alias)",
+                    "  :eval <code>   - Execute JavaScript (alias)",
+                    "",
+                    "Code from Registers:",
+                    "  :js a          - Execute JavaScript from register 'a'",
+                    "  :py            - Execute Python from unnamed register (yanked code)",
+                    "",
+                    "Other Commands:",
+                    "  :registers     - Show all vim registers",
+                    "  :registers r   - Show results register",
+                    "  :help <lang>   - Show help for specific language",
+                    "  :colorscheme   - Change theme",
+                    "  :set ft=<lang> - Set file type for syntax highlighting",
+                    "",
+                    `Available languages: ${supportedLanguages.join(", ")}`,
+                    "",
+                    "Examples:",
+                    "  :help py       - Show Python help",
+                    "  :help js       - Show JavaScript help"
+                ].join("\n");
+
+                console.log(helpSummary);
+                showExecutionResult(helpSummary, false);
+            }
+        } catch (error) {
+            console.error("Help error:", error);
+            showExecutionResult("Error displaying help", true);
+        }
+    });
+
     // Theme switching commands (vim standard + alternative)
     Vim.defineEx("colorscheme", "colo", switchThemeCommand);
     Vim.defineEx("theme", "theme", switchThemeCommand);

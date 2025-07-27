@@ -116,32 +116,6 @@ export class PythonExecutor extends Executor {
         return "Python";
     }
 
-    /**
-     * Get help text for this executor
-     * @returns {string} Help text
-     */
-    getHelpText() {
-        return `
-Python Execution Help:
-• Execute any valid Python expression or statement
-• Supports Python 3.13.2 via Pyodide WebAssembly runtime
-• Pre-loaded packages: numpy, pandas, requests
-• Results are automatically stored in "${getResultsRegister()}" register
-• First execution may take a moment to load the Python runtime
-
-Examples:
-  :py print("Hello, World!")
-  :py [x**2 for x in range(5)]
-  :py import math; math.pi * 2
-  :python sum([1, 2, 3, 4, 5])
-  :py import numpy as np; np.array([1,2,3])
-  :py import pandas as pd; pd.DataFrame({"a": [1,2,3]})
-  :py import requests; requests.get("https://httpbin.org/json").json()
-
-Note: Additional packages can be installed using micropip:
-  :py import micropip; await micropip.install("matplotlib")
-        `.trim();
-    }
 
     /**
      * Check if Pyodide is loaded and ready

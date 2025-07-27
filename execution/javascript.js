@@ -52,24 +52,6 @@ export class JavaScriptExecutor extends Executor {
         return "JavaScript";
     }
 
-    /**
-     * Get help text for this executor
-     * @returns {string} Help text
-     */
-    getHelpText() {
-        return `
-JavaScript Execution Help:
-• Execute any valid JavaScript expression or statement
-• Access browser APIs: console, window, document, etc.
-• Use modern JavaScript features: async/await, arrow functions, etc.
-• Results are automatically stored in "${getResultsRegister()}" register
-
-Examples:
-  :js Math.PI * 2
-  :js [1,2,3].map(x => x * 2)
-  :js fetch('/api/data').then(r => r.json())
-        `.trim();
-    }
 }
 
 // Export convenience instance

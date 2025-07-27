@@ -9,6 +9,7 @@ import {
 import { executionEngine } from "./execution/engine.js";
 import { formatForConsole } from "./execution/formatters.js";
 import { formatText } from "./formatting.js";
+import { getMainHelp, getTopicHelp, getAvailableTopics } from "./help.js";
 
 /**
  * Get code from vim registers (unnamed or named)
@@ -488,82 +489,28 @@ export function registerVimCommands(
     Vim.defineEx("help", "help", (cm, params) => {
         try {
             if (params.args && params.args.length > 0) {
-                const language = params.args[0].toLowerCase();
-                const supportedLanguages =
-                    executionEngine.getSupportedLanguages();
+                const topic = params.args[0].toLowerCase();
+                const availableTopics = getAvailableTopics();
 
-                if (supportedLanguages.includes(language)) {
-                    // Get the executor for this language
-                    const executor = executionEngine.executors.get(language);
-                    if (
-                        executor &&
-                        typeof executor.getHelpText === "function"
-                    ) {
-                        const helpText = executor.getHelpText();
-                        console.log(`Help for ${executor.getDisplayName()}:`);
-                        console.log(helpText);
-                        showExecutionResult(helpText, false);
-                    } else {
-                        showExecutionResult(
-                            `No help available for ${language}`,
-                            true
-                        );
-                    }
-                } else {
+                // Check for any help topic (languages and commands unified)
+                if (availableTopics.includes(topic)) {
+                    const helpText = getTopicHelp(topic);
+                    console.log(`Help for ${topic}:`);
+                    console.log(helpText);
+                    showExecutionResult(helpText, false);
+                } 
+                // Unknown topic
+                else {
                     showExecutionResult(
-                        `Unknown language: ${language}. Available: ${supportedLanguages.join(", ")}`,
+                        `Unknown topic: ${topic}. Available: ${availableTopics.join(", ")}`,
                         true
                     );
                 }
             } else {
-                // Show general help with all available executors
-                const supportedLanguages =
-                    executionEngine.getSupportedLanguages();
-                const helpSummary = [
-                    "=== SCRATCHPAD HELP ===",
-                    "",
-                    "File Operations:",
-                    "  :w             - Save/write current content",
-                    "  :q             - Quit/close window",
-                    "  :wq            - Write and quit",
-                    "",
-                    "Code Execution:",
-                    "  :js <code>     - Execute JavaScript",
-                    "  :py <code>     - Execute Python",
-                    "  :python <code> - Execute Python (alias)",
-                    "  :eval <code>   - Execute JavaScript (alias)",
-                    "",
-                    "Code from Registers:",
-                    "  :js a          - Execute JavaScript from register 'a'",
-                    "  :py            - Execute Python from unnamed register (yanked code)",
-                    "  Results stored in register 'r' - use \"rp to paste",
-                    "",
-                    "Text Formatting:",
-                    "  :fmt           - Auto-format selection/line (detects JSON)",
-                    "  :fmt json      - Format as JSON with sorted keys",
-                    "  :fmt clean     - Remove trailing whitespace, normalize line endings",
-                    "  :fmt table     - Convert CSV/TSV to aligned ASCII table",
-                    "  :'<,'>fmt      - Format visual selection",
-                    "  :10,20fmt      - Format specific line range",
-                    "",
-                    "Theme & Settings:",
-                    "  :colorscheme   - Show current theme and available options",
-                    "  :colo <theme>  - Change theme (short form)",
-                    "  :theme <theme> - Change theme (alternative)",
-                    "  :set ft=<lang> - Set file type for syntax highlighting",
-                    "",
-                    "Other Commands:",
-                    "  :registers     - Show all vim registers",
-                    "  :registers r   - Show results register",
-                    "  :help <lang>   - Show help for specific language",
-                    "",
-                    `Available languages: ${supportedLanguages.join(", ")}`,
-                    "",
-                    "Examples:",
-                    "  :help py       - Show Python help",
-                    "  :help js       - Show JavaScript help"
-                ].join("\n");
-
+                // Show main help
+                const supportedLanguages = executionEngine.getSupportedLanguages();
+                const helpSummary = getMainHelp(supportedLanguages);
+                
                 console.log(helpSummary);
                 showExecutionResult(helpSummary, false);
             }

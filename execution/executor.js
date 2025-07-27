@@ -30,12 +30,4 @@ export class Executor {
         return this.language;
     }
 
-    /**
-     * Check if this executor can handle the given code
-     * @param {string} code - Code to check
-     * @returns {boolean} True if can execute
-     */
-    canExecute(code) {
-        return true; // Default: assume yes, override for language detection
-    }
 }

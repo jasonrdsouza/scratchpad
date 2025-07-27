@@ -52,31 +52,6 @@ export class JavaScriptExecutor extends Executor {
         return "JavaScript";
     }
 
-    /**
-     * Check if this executor can handle the given code
-     * Basic JavaScript syntax detection
-     * @param {string} code - Code to check
-     * @returns {boolean} True if looks like JavaScript
-     */
-    canExecute(code) {
-        if (!code || typeof code !== "string") {
-            return false;
-        }
-
-        // Basic JavaScript syntax indicators
-        const jsPatterns = [
-            /\b(const|let|var)\b/, // Variable declarations
-            /\b(function|class|async)\b/, // Function/class declarations
-            /\b(if|for|while|switch)\b/, // Control structures
-            /\b(console|window|document)\b/, // Browser globals
-            /=>|===|!==|\?\?/, // JS-specific operators
-            /\{|\}|\[|\]/, // Brackets (common in JS)
-            /;$/m // Semicolon endings
-        ];
-
-        // If any JS pattern matches, we can probably execute it
-        return jsPatterns.some((pattern) => pattern.test(code));
-    }
 
     /**
      * Get help text for this executor

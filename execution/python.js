@@ -116,36 +116,6 @@ export class PythonExecutor extends Executor {
         return "Python";
     }
 
-    /**
-     * Check if this executor can handle the given code
-     * Basic Python syntax detection
-     * @param {string} code - Code to check
-     * @returns {boolean} True if looks like Python
-     */
-    canExecute(code) {
-        if (!code || typeof code !== "string") {
-            return false;
-        }
-
-        // Python syntax indicators
-        const pythonPatterns = [
-            /^\s*import\s+\w+/, // import statements
-            /^\s*from\s+\w+\s+import/, // from import statements
-            /^\s*def\s+\w+\s*\(/, // function definitions
-            /^\s*class\s+\w+/, // class definitions
-            /^\s*if\s+.*:/, // if statements
-            /^\s*for\s+.*:/, // for loops
-            /^\s*while\s+.*:/, // while loops
-            /^\s*try\s*:/, // try blocks
-            /print\s*\(/, // print function calls
-            /^\s*#/, // comments
-            /:\s*$/, // lines ending with colon (Python blocks)
-            /^\s{4}/ // 4-space indentation (common Python style)
-        ];
-
-        // If any Python pattern matches, we can probably execute it
-        return pythonPatterns.some((pattern) => pattern.test(code));
-    }
 
     /**
      * Get help text for this executor
@@ -182,17 +152,6 @@ Note: Additional packages can be installed using micropip:
         return this.pyodide !== null && !this.isLoading;
     }
 
-    /**
-     * Get loading status
-     * @returns {Object} Status information
-     */
-    getStatus() {
-        return {
-            isReady: this.isReady(),
-            isLoading: this.isLoading,
-            hasRuntime: this.pyodide !== null
-        };
-    }
 }
 
 // Export convenience instance

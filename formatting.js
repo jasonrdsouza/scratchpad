@@ -59,6 +59,34 @@ function sortObjectKeys(obj) {
 }
 
 /**
+ * Format text by cleaning up whitespace and normalizing line endings
+ * @param {string} text - Text to clean
+ * @returns {string} Cleaned text
+ */
+export function formatClean(text) {
+    if (!text) {
+        return text;
+    }
+
+    // Split into lines for processing
+    let lines = text.split(/\r?\n/);
+
+    // Clean each line
+    lines = lines.map((line) => {
+        // Remove trailing whitespace
+        return line.replace(/\s+$/, "");
+    });
+
+    // Remove trailing empty lines
+    while (lines.length > 0 && lines[lines.length - 1] === "") {
+        lines.pop();
+    }
+
+    // Join with consistent line endings (LF)
+    return lines.join("\n");
+}
+
+/**
  * Auto-detect format type from content
  * @param {string} text - Text to analyze
  * @returns {string} Detected format type
@@ -103,9 +131,12 @@ export function formatText(text, formatType = "auto") {
         case "json":
             formattedText = formatJSON(text);
             break;
+        case "clean":
+            formattedText = formatClean(text);
+            break;
         default:
             throw new Error(
-                `Unsupported format type: ${detectedFormat}. Currently only 'json' is supported.`
+                `Unsupported format type: ${detectedFormat}. Currently supported: 'json', 'clean'.`
             );
     }
 

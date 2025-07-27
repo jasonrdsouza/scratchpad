@@ -283,6 +283,12 @@ The project follows a modular architecture with clear separation of concerns:
 - **Development workflow changes** - Build process, formatting, dependencies
 - **Key learnings** - Technical insights, debugging discoveries, implementation patterns
 
+**CRITICAL**: When adding new vim commands or functionality:
+
+1. **Update the `:help` command** - Add new commands to the help text in `commands.js`
+2. **Update this README** - Document the new feature in the appropriate section
+3. **Test the help system** - Ensure `:help` displays the new functionality correctly
+
 Keep the documentation current to maintain development velocity and onboarding effectiveness.
 
 ## Success Metrics

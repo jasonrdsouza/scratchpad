@@ -87,6 +87,117 @@ export function formatClean(text) {
 }
 
 /**
+ * Format tabular data as an ASCII table with aligned columns
+ * @param {string} text - CSV/TSV text to format
+ * @returns {string} Formatted ASCII table
+ */
+export function formatTable(text) {
+    if (!text || !text.trim()) {
+        throw new Error("No text to format as table");
+    }
+
+    const lines = text.trim().split(/\r?\n/);
+    if (lines.length === 0) {
+        throw new Error("No data to format as table");
+    }
+
+    // Auto-detect delimiter
+    const delimiter = detectDelimiter(lines[0]);
+
+    // Parse all rows
+    const rows = lines.map((line) => {
+        return line.split(delimiter).map((cell) => cell.trim());
+    });
+
+    // Ensure all rows have the same number of columns
+    const maxColumns = Math.max(...rows.map((row) => row.length));
+    rows.forEach((row) => {
+        while (row.length < maxColumns) {
+            row.push("");
+        }
+    });
+
+    // Calculate column widths
+    const columnWidths = [];
+    for (let col = 0; col < maxColumns; col++) {
+        let maxWidth = 0;
+        for (let row = 0; row < rows.length; row++) {
+            const cellWidth = String(rows[row][col] || "").length;
+            maxWidth = Math.max(maxWidth, cellWidth);
+        }
+        columnWidths[col] = Math.max(maxWidth, 3); // Minimum width of 3
+    }
+
+    // Build the table
+    const tableLines = [];
+
+    // Header row
+    if (rows.length > 0) {
+        const headerRow = rows[0];
+        const headerLine =
+            "| " +
+            headerRow
+                .map((cell, i) => String(cell || "").padEnd(columnWidths[i]))
+                .join(" | ") +
+            " |";
+
+        tableLines.push(headerLine);
+
+        // Header separator
+        const separatorLine =
+            "|" +
+            columnWidths.map((width) => "-".repeat(width + 2)).join("|") +
+            "|";
+
+        tableLines.push(separatorLine);
+
+        // Data rows
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            const rowLine =
+                "| " +
+                row
+                    .map((cell, j) =>
+                        String(cell || "").padEnd(columnWidths[j])
+                    )
+                    .join(" | ") +
+                " |";
+
+            tableLines.push(rowLine);
+        }
+    }
+
+    return tableLines.join("\n");
+}
+
+/**
+ * Auto-detect the delimiter used in tabular data
+ * @param {string} firstLine - First line of data to analyze
+ * @returns {string} Detected delimiter
+ */
+function detectDelimiter(firstLine) {
+    // Count potential delimiters
+    const commas = (firstLine.match(/,/g) || []).length;
+    const tabs = (firstLine.match(/\t/g) || []).length;
+    const pipes = (firstLine.match(/\|/g) || []).length;
+    const semicolons = (firstLine.match(/;/g) || []).length;
+
+    // Return the most common delimiter
+    if (tabs > 0 && tabs >= commas) return "\t";
+    if (pipes > 0 && pipes >= commas) return "|";
+    if (semicolons > 0 && semicolons >= commas) return ";";
+    if (commas > 0) return ",";
+
+    // Fall back to multiple spaces if no clear delimiter
+    if (firstLine.match(/\s{2,}/)) {
+        return /\s{2,}/; // Multiple spaces regex
+    }
+
+    // Default to comma
+    return ",";
+}
+
+/**
  * Auto-detect format type from content
  * @param {string} text - Text to analyze
  * @returns {string} Detected format type
@@ -134,9 +245,12 @@ export function formatText(text, formatType = "auto") {
         case "clean":
             formattedText = formatClean(text);
             break;
+        case "table":
+            formattedText = formatTable(text);
+            break;
         default:
             throw new Error(
-                `Unsupported format type: ${detectedFormat}. Currently supported: 'json', 'clean'.`
+                `Unsupported format type: ${detectedFormat}. Currently supported: 'json', 'clean', 'table'.`
             );
     }
 

@@ -542,6 +542,7 @@ export function registerVimCommands(
                     "  :fmt           - Auto-format selection/line (detects JSON)",
                     "  :fmt json      - Format as JSON with sorted keys",
                     "  :fmt clean     - Remove trailing whitespace, normalize line endings",
+                    "  :fmt table     - Convert CSV/TSV to aligned ASCII table",
                     "  :'<,'>fmt      - Format visual selection",
                     "  :10,20fmt      - Format specific line range",
                     "",

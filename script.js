@@ -1,6 +1,8 @@
 import { EditorView, basicSetup } from "codemirror";
 import { EditorState, Compartment } from "@codemirror/state";
 import { vim, Vim, getCM } from "@replit/codemirror-vim";
+import { keymap } from "@codemirror/view";
+import { indentWithTab } from "@codemirror/commands";
 import { markdown } from "@codemirror/lang-markdown";
 import { python } from "@codemirror/lang-python";
 import { javascript } from "@codemirror/lang-javascript";
@@ -77,6 +79,18 @@ const initialWrap = getInitialWrapState();
 const extensions = [
     basicSetup,
     vim(),
+    keymap.of([
+        indentWithTab, // Enable tab insertion instead of focus navigation
+        // Override Ctrl+V to enable vim block visual mode instead of browser paste
+        {
+            key: "Ctrl-v",
+            preventDefault: true,
+            run: () => {
+                // Let vim handle Ctrl+V for block visual mode
+                return false; // Return false to allow vim to handle the key
+            }
+        }
+    ]),
     themeCompartment.of(getTheme()), // Use theme compartment for dynamic switching
     languageCompartment.of(
         initialFt && languages[initialFt] ? languages[initialFt]() : []

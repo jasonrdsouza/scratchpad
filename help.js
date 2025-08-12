@@ -193,7 +193,7 @@ export function getMainHelp(supportedLanguages) {
         "  :help <topic>  - Show help for specific topic (e.g., :help fmt)",
         "",
         `Available languages: ${supportedLanguages.join(", ")}`,
-        `Available help topics: ${Object.keys(helpTopics).join(", ")}`,
+        `Available help topics: ${getAvailableTopics().join(", ")}`,
         "",
         "Examples:",
         "  :help py       - Show Python help",

@@ -11,6 +11,7 @@ import { formatForConsole } from "./execution/formatters.js";
 import { formatText } from "./formatting.js";
 import { getMainHelp, getTopicHelp, getAvailableTopics } from "./help.js";
 import { highlightWhitespace } from "@codemirror/view";
+import { EditorView } from "codemirror";
 
 /**
  * Get code from vim registers (unnamed or named)
@@ -181,7 +182,8 @@ export function registerVimCommands(
     languages,
     languageCompartment,
     themeCompartment,
-    whitespaceCompartment
+    whitespaceCompartment,
+    wrapCompartment
 ) {
     // Make editorView globally accessible for commands
     window.editorView = editorView;
@@ -194,12 +196,35 @@ export function registerVimCommands(
         window.close();
     });
 
-    // Language/filetype setting
+    // Settings command
     Vim.defineEx("set", "set", (cm, params) => {
         if (params.args && params.args.length > 0) {
-            const [key, value] = params.args[0].split("=");
-            if (key === "filetype" || key === "ft") {
-                setLanguage(editorView, value, languages, languageCompartment);
+            const arg = params.args[0];
+
+            // Handle wrap/nowrap
+            if (arg === "wrap") {
+                editorView.dispatch({
+                    effects: wrapCompartment.reconfigure([
+                        EditorView.lineWrapping
+                    ])
+                });
+                localStorage.setItem("vim-scratchpad-wrap", "true");
+            } else if (arg === "nowrap") {
+                editorView.dispatch({
+                    effects: wrapCompartment.reconfigure([])
+                });
+                localStorage.setItem("vim-scratchpad-wrap", "false");
+            } else {
+                // Handle key=value pairs (like filetype)
+                const [key, value] = arg.split("=");
+                if (key === "filetype" || key === "ft") {
+                    setLanguage(
+                        editorView,
+                        value,
+                        languages,
+                        languageCompartment
+                    );
+                }
             }
         }
     });

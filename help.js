@@ -182,6 +182,8 @@ export function getMainHelp(supportedLanguages) {
         "  :colo <theme>  - Change theme (short form)",
         "  :theme <theme> - Change theme (alternative)",
         "  :set ft=<lang> - Set file type for syntax highlighting",
+        "  :set wrap      - Enable soft line wrapping",
+        "  :set nowrap    - Disable soft line wrapping",
         "  :whitespace    - Toggle whitespace visibility (spaces, tabs)",
         "",
         "Other Commands:",

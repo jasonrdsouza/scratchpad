@@ -17,6 +17,7 @@ import {
     loadVimHistory,
     getInitialContent,
     getInitialFiletype,
+    getInitialWrapState,
     restoreEditorState,
     setupAutosave
 } from "./state-manager.js";
@@ -45,6 +46,7 @@ function updateModeIndicator(modeObj) {
 let languageCompartment = new Compartment();
 let themeCompartment = new Compartment();
 let whitespaceCompartment = new Compartment();
+let wrapCompartment = new Compartment();
 
 const languages = {
     markdown: () => markdown(),
@@ -69,6 +71,7 @@ const languages = {
 
 const initialContent = getInitialContent();
 const initialFt = getInitialFiletype();
+const initialWrap = getInitialWrapState();
 
 // Create extensions array
 const extensions = [
@@ -78,7 +81,8 @@ const extensions = [
     languageCompartment.of(
         initialFt && languages[initialFt] ? languages[initialFt]() : []
     ),
-    whitespaceCompartment.of([]) // Start with whitespace hidden
+    whitespaceCompartment.of([]), // Start with whitespace hidden
+    wrapCompartment.of(initialWrap ? [EditorView.lineWrapping] : []) // Use saved wrap state
 ];
 
 let editorView;
@@ -122,5 +126,6 @@ registerVimCommands(
     languages,
     languageCompartment,
     themeCompartment,
-    whitespaceCompartment
+    whitespaceCompartment,
+    wrapCompartment
 );

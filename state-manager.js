@@ -5,6 +5,7 @@ import { EditorState } from "@codemirror/state";
 // Storage keys
 export const LS_CONTENT_KEY = "vim-scratchpad-content";
 export const LS_FT_KEY = "vim-scratchpad-filetype";
+export const LS_WRAP_KEY = "vim-scratchpad-wrap";
 export const LS_VIM_COMMAND_HISTORY_KEY = "vim-command-history";
 export const LS_VIM_SEARCH_HISTORY_KEY = "vim-search-history";
 export const LS_EDITOR_STATE_KEY = "editor-state";
@@ -160,6 +161,14 @@ export function getInitialContent() {
  */
 export function getInitialFiletype() {
     return localStorage.getItem(LS_FT_KEY);
+}
+
+/**
+ * Get initial wrap state from localStorage
+ */
+export function getInitialWrapState() {
+    const wrap = localStorage.getItem(LS_WRAP_KEY);
+    return wrap === "true";
 }
 
 /**

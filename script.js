@@ -16,7 +16,6 @@ import { go } from "@codemirror/lang-go";
 import { highlightWhitespace, lineNumbers } from "@codemirror/view";
 import { lineNumbersRelative } from "@uiw/codemirror-extensions-line-numbers-relative";
 import {
-    LS_FT_KEY,
     loadVimHistory,
     getInitialContent,
     getInitialFiletype,
@@ -25,6 +24,7 @@ import {
     restoreEditorState,
     setupAutosave
 } from "./state-manager.js";
+import { TIMING } from "./config.js";
 import { registerVimCommands } from "./commands.js";
 import { getTheme } from "./theme-manager.js";
 
@@ -138,7 +138,7 @@ cm.on("vim-mode-change", (modeObj) => {
 // Load vim history after vim is initialized
 setTimeout(() => {
     loadVimHistory();
-}, 100); // Small delay to ensure vim is fully initialized
+}, TIMING.VIM_INIT_DELAY_MS); // Small delay to ensure vim is fully initialized
 
 console.log("Editor initialized with vim extension and mode listener");
 

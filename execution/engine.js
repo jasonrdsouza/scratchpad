@@ -10,6 +10,7 @@ import { storeResult } from "./registers.js";
 import { Executor } from "./executor.js";
 import { JavaScriptExecutor } from "./javascript.js";
 import { PythonExecutor } from "./python.js";
+import { DEFAULTS, ERROR_MESSAGES } from "../config.js";
 
 /**
  * Main execution engine that coordinates different language executors
@@ -24,7 +25,7 @@ export class ExecutionEngine {
         this.registerExecutor("js", new JavaScriptExecutor()); // Alias
         this.registerExecutor("python", new PythonExecutor());
         this.registerExecutor("py", new PythonExecutor()); // Alias
-        this.setDefaultLanguage("javascript");
+        this.setDefaultLanguage(DEFAULTS.EXECUTION_LANGUAGE);
     }
 
     /**
@@ -44,7 +45,7 @@ export class ExecutionEngine {
         if (this.executors.has(language.toLowerCase())) {
             this.defaultLanguage = language.toLowerCase();
         } else {
-            throw new Error(`Unknown language: ${language}`);
+            throw new Error(ERROR_MESSAGES.UNSUPPORTED_LANGUAGE(language));
         }
     }
 
@@ -70,7 +71,7 @@ export class ExecutionEngine {
 
             if (!executor) {
                 throw new Error(
-                    `Unsupported language: ${language || "default"}`
+                    ERROR_MESSAGES.UNSUPPORTED_LANGUAGE(language || "default")
                 );
             }
 
@@ -121,7 +122,9 @@ export class ExecutionEngine {
             const code = getCodeFromRegister(registerName);
             if (!code || !code.trim()) {
                 throw new Error(
-                    registerName ? "No code found in register" : "No code found"
+                    registerName
+                        ? ERROR_MESSAGES.REGISTER_NOT_FOUND(registerName)
+                        : ERROR_MESSAGES.NO_CODE_FOUND
                 );
             }
             return await this.execute(code.trim(), language);

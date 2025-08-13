@@ -1,5 +1,5 @@
 import { Vim } from "@replit/codemirror-vim";
-import { saveContent, LS_RELATIVENUMBER_KEY } from "./state-manager.js";
+import { saveContent } from "./state-manager.js";
 import {
     switchTheme,
     getAvailableThemes,
@@ -13,6 +13,14 @@ import { getMainHelp, getTopicHelp, getAvailableTopics } from "./help.js";
 import { highlightWhitespace, lineNumbers } from "@codemirror/view";
 import { lineNumbersRelative } from "@uiw/codemirror-extensions-line-numbers-relative";
 import { EditorView } from "codemirror";
+import {
+    STORAGE_KEYS,
+    TIMING,
+    REGISTERS,
+    VIM_ABBREVIATIONS,
+    ERROR_MESSAGES,
+    SUCCESS_MESSAGES
+} from "./config.js";
 
 /**
  * Get code from vim registers (unnamed or named)
@@ -36,7 +44,7 @@ function getCodeFromRegister(registerName = null) {
                     return registerText;
                 }
             }
-            throw new Error(`Register '${registerName}' is empty or not found`);
+            throw new Error(ERROR_MESSAGES.REGISTER_NOT_FOUND(registerName));
         } else {
             // Use unnamed register
             const unnamedReg = registerController.unnamedRegister;
@@ -133,13 +141,16 @@ function showExecutionResult(result, isError = false) {
                 if (resultDisplay && resultDisplay.parentNode) {
                     resultDisplay.parentNode.removeChild(resultDisplay);
                 }
-            }, 300);
+            }, TIMING.RESULT_HIDE_ANIMATION_MS);
         }
     };
 
     // Function to start the hide timer
     const startHideTimer = () => {
-        resultDisplay.hideTimer = setTimeout(hideResult, 5000);
+        resultDisplay.hideTimer = setTimeout(
+            hideResult,
+            TIMING.RESULT_DISPLAY_TIMEOUT_MS
+        );
     };
 
     // Add hover event listeners to pause/resume auto-hide
@@ -166,12 +177,12 @@ function setLanguage(view, lang, languages, languageCompartment) {
         view.dispatch({
             effects: languageCompartment.reconfigure(language())
         });
-        localStorage.setItem("vim-scratchpad-filetype", lang);
+        localStorage.setItem(STORAGE_KEYS.FILETYPE, lang);
     } else {
         view.dispatch({
             effects: languageCompartment.reconfigure([])
         });
-        localStorage.removeItem("vim-scratchpad-filetype");
+        localStorage.removeItem(STORAGE_KEYS.FILETYPE);
     }
 }
 
@@ -204,32 +215,30 @@ export function registerVimCommands(
             const arg = params.args[0];
 
             // Handle relativenumber options (with proper vim abbreviations + common shortcuts)
-            if (
-                arg === "relativenumber" ||
-                arg === "relati" ||
-                arg === "rela" ||
-                arg === "rnu"
-            ) {
+            if (VIM_ABBREVIATIONS.RELATIVE_NUMBER.ENABLE.includes(arg)) {
                 editorView.dispatch({
                     effects:
                         lineNumberCompartment.reconfigure(lineNumbersRelative)
                 });
-                localStorage.setItem(LS_RELATIVENUMBER_KEY, "true");
+                localStorage.setItem(STORAGE_KEYS.RELATIVE_NUMBERS, "true");
                 console.log("Switched to relative line numbers");
-                showExecutionResult("Relative line numbers enabled", false);
+                showExecutionResult(
+                    SUCCESS_MESSAGES.RELATIVE_NUMBERS_ENABLED,
+                    false
+                );
                 return;
             } else if (
-                arg === "norelativenumber" ||
-                arg === "norelati" ||
-                arg === "norela" ||
-                arg === "nornu"
+                VIM_ABBREVIATIONS.RELATIVE_NUMBER.DISABLE.includes(arg)
             ) {
                 editorView.dispatch({
                     effects: lineNumberCompartment.reconfigure(lineNumbers())
                 });
-                localStorage.setItem(LS_RELATIVENUMBER_KEY, "false");
+                localStorage.setItem(STORAGE_KEYS.RELATIVE_NUMBERS, "false");
                 console.log("Switched to absolute line numbers");
-                showExecutionResult("Absolute line numbers enabled", false);
+                showExecutionResult(
+                    SUCCESS_MESSAGES.ABSOLUTE_NUMBERS_ENABLED,
+                    false
+                );
                 return;
             }
 
@@ -240,16 +249,16 @@ export function registerVimCommands(
                         EditorView.lineWrapping
                     ])
                 });
-                localStorage.setItem("vim-scratchpad-wrap", "true");
+                localStorage.setItem(STORAGE_KEYS.WRAP, "true");
             } else if (arg === "nowrap") {
                 editorView.dispatch({
                     effects: wrapCompartment.reconfigure([])
                 });
-                localStorage.setItem("vim-scratchpad-wrap", "false");
+                localStorage.setItem(STORAGE_KEYS.WRAP, "false");
             } else {
                 // Handle key=value pairs (like filetype)
                 const [key, value] = arg.split("=");
-                if (key === "filetype" || key === "ft") {
+                if (VIM_ABBREVIATIONS.FILETYPE.includes(key)) {
                     setLanguage(
                         editorView,
                         value,
@@ -269,7 +278,7 @@ export function registerVimCommands(
                 const firstArg = params.args[0];
                 if (
                     firstArg.length === 1 &&
-                    /^[a-zA-Z0-9"=_]$/.test(firstArg)
+                    REGISTERS.VALID_PATTERN.test(firstArg)
                 ) {
                     // Treat as register name
                     const result = await executionEngine.executeFromRegister(
@@ -456,10 +465,13 @@ export function registerVimCommands(
                 });
 
                 // Save theme preference
-                localStorage.setItem("vim-scratchpad-theme", themeName);
+                localStorage.setItem(STORAGE_KEYS.THEME, themeName);
 
-                console.log(`Switched to theme: ${themeName}`);
-                showExecutionResult(`Switched to theme: ${themeName}`, false);
+                console.log(SUCCESS_MESSAGES.THEME_SWITCHED(themeName));
+                showExecutionResult(
+                    SUCCESS_MESSAGES.THEME_SWITCHED(themeName),
+                    false
+                );
             } else {
                 // Show current theme and available themes
                 const current = getCurrentTheme();
@@ -535,7 +547,7 @@ export function registerVimCommands(
 
             // Show success message with detected format type
             showExecutionResult(
-                `Formatted as ${result.format.toUpperCase()}`,
+                SUCCESS_MESSAGES.FORMAT_SUCCESS(result.format),
                 false
             );
         } catch (error) {
@@ -594,7 +606,7 @@ export function registerVimCommands(
                     whitespaceVisible = !whitespaceVisible;
                 } else {
                     throw new Error(
-                        `Unknown whitespace action: ${action}. Use 'on', 'off', or 'toggle'.`
+                        ERROR_MESSAGES.UNKNOWN_WHITESPACE_ACTION(action)
                     );
                 }
             } else {
@@ -609,9 +621,11 @@ export function registerVimCommands(
                 )
             });
 
-            const status = whitespaceVisible ? "visible" : "hidden";
-            console.log(`Whitespace is now ${status}`);
-            showExecutionResult(`Whitespace is now ${status}`, false);
+            const message = whitespaceVisible
+                ? SUCCESS_MESSAGES.WHITESPACE_VISIBLE
+                : SUCCESS_MESSAGES.WHITESPACE_HIDDEN;
+            console.log(message);
+            showExecutionResult(message, false);
         } catch (error) {
             console.error("Whitespace toggle error:", error);
             showExecutionResult(error.message, true);
@@ -627,17 +641,17 @@ export function registerVimCommands(
         editorView.dispatch({
             effects: lineNumberCompartment.reconfigure(lineNumbersRelative)
         });
-        localStorage.setItem(LS_RELATIVENUMBER_KEY, "true");
+        localStorage.setItem(STORAGE_KEYS.RELATIVE_NUMBERS, "true");
         console.log("Switched to relative line numbers");
-        showExecutionResult("Relative line numbers enabled", false);
+        showExecutionResult(SUCCESS_MESSAGES.RELATIVE_NUMBERS_ENABLED, false);
     });
 
     Vim.defineEx("norelativenumber", "norela", () => {
         editorView.dispatch({
             effects: lineNumberCompartment.reconfigure(lineNumbers())
         });
-        localStorage.setItem(LS_RELATIVENUMBER_KEY, "false");
+        localStorage.setItem(STORAGE_KEYS.RELATIVE_NUMBERS, "false");
         console.log("Switched to absolute line numbers");
-        showExecutionResult("Absolute line numbers enabled", false);
+        showExecutionResult(SUCCESS_MESSAGES.ABSOLUTE_NUMBERS_ENABLED, false);
     });
 }

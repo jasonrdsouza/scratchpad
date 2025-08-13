@@ -5,6 +5,8 @@
  * Supports JSON pretty-printing with alphabetized keys and other formats.
  */
 
+import { FORMAT_PATTERNS, HELP, ERROR_MESSAGES } from "./config.js";
+
 /**
  * Format JSON with pretty printing and alphabetized keys
  * @param {string} jsonText - JSON text to format
@@ -16,7 +18,9 @@ export function formatJSON(jsonText) {
     jsonText = jsonText.trim();
 
     if (!jsonText) {
-        throw new Error("No text to format");
+        throw new Error(
+            ERROR_MESSAGES.NO_TEXT_TO_FORMAT || "No text to format"
+        );
     }
 
     try {
@@ -29,7 +33,7 @@ export function formatJSON(jsonText) {
         // Pretty print with 4-space indentation
         return JSON.stringify(sortedObj, null, 4);
     } catch (error) {
-        throw new Error(`Invalid JSON: ${error.message}`);
+        throw new Error(ERROR_MESSAGES.INVALID_JSON(error.message));
     }
 }
 
@@ -93,12 +97,16 @@ export function formatClean(text) {
  */
 export function formatTable(text) {
     if (!text || !text.trim()) {
-        throw new Error("No text to format as table");
+        throw new Error(
+            ERROR_MESSAGES.NO_TEXT_TO_FORMAT || "No text to format as table"
+        );
     }
 
     const lines = text.trim().split(/\r?\n/);
     if (lines.length === 0) {
-        throw new Error("No data to format as table");
+        throw new Error(
+            ERROR_MESSAGES.NO_DATA_TO_FORMAT || "No data to format as table"
+        );
     }
 
     // Auto-detect delimiter
@@ -125,7 +133,7 @@ export function formatTable(text) {
             const cellWidth = String(rows[row][col] || "").length;
             maxWidth = Math.max(maxWidth, cellWidth);
         }
-        columnWidths[col] = Math.max(maxWidth, 3); // Minimum width of 3
+        columnWidths[col] = Math.max(maxWidth, HELP.MIN_TABLE_COLUMN_WIDTH);
     }
 
     // Build the table
@@ -177,10 +185,11 @@ export function formatTable(text) {
  */
 function detectDelimiter(firstLine) {
     // Count potential delimiters
-    const commas = (firstLine.match(/,/g) || []).length;
-    const tabs = (firstLine.match(/\t/g) || []).length;
-    const pipes = (firstLine.match(/\|/g) || []).length;
-    const semicolons = (firstLine.match(/;/g) || []).length;
+    const delimiters = FORMAT_PATTERNS.CSV_DELIMITERS;
+    const counts = delimiters.map(
+        (d) => (firstLine.match(new RegExp(`\\${d}`, "g")) || []).length
+    );
+    const [commas, tabs, pipes, semicolons] = counts;
 
     // Return the most common delimiter
     if (tabs > 0 && tabs >= commas) return "\t";
@@ -189,8 +198,8 @@ function detectDelimiter(firstLine) {
     if (commas > 0) return ",";
 
     // Fall back to multiple spaces if no clear delimiter
-    if (firstLine.match(/\s{2,}/)) {
-        return /\s{2,}/; // Multiple spaces regex
+    if (firstLine.match(FORMAT_PATTERNS.MULTI_SPACE_REGEX)) {
+        return FORMAT_PATTERNS.MULTI_SPACE_REGEX; // Multiple spaces regex
     }
 
     // Default to comma
@@ -207,8 +216,8 @@ export function detectFormat(text) {
 
     // JSON detection
     if (
-        (text.startsWith("{") && text.endsWith("}")) ||
-        (text.startsWith("[") && text.endsWith("]"))
+        FORMAT_PATTERNS.JSON.START_PATTERNS.some((p) => text.startsWith(p)) &&
+        FORMAT_PATTERNS.JSON.END_PATTERNS.some((p) => text.endsWith(p))
     ) {
         try {
             JSON.parse(text);
@@ -249,9 +258,7 @@ export function formatText(text, formatType = "auto") {
             formattedText = formatTable(text);
             break;
         default:
-            throw new Error(
-                `Unsupported format type: ${detectedFormat}. Currently supported: 'json', 'clean', 'table'.`
-            );
+            throw new Error(ERROR_MESSAGES.UNSUPPORTED_FORMAT(detectedFormat));
     }
 
     return {

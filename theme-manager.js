@@ -14,12 +14,13 @@ import {
     basicLight,
     basicDark
 } from "@uiw/codemirror-themes-all";
-
-// Storage key for theme persistence
-const LS_THEME_KEY = "vim-scratchpad-theme";
-
-// Default theme
-const DEFAULT_THEME = "nord";
+import {
+    STORAGE_KEYS,
+    DEFAULTS,
+    ALL_THEMES,
+    THEMES,
+    ERROR_MESSAGES
+} from "./config.js";
 
 // Theme registry with all available themes
 const themes = {
@@ -48,7 +49,7 @@ const themes = {
  * Get the current theme name from localStorage or default
  */
 export function getCurrentTheme() {
-    return localStorage.getItem(LS_THEME_KEY) || DEFAULT_THEME;
+    return localStorage.getItem(STORAGE_KEYS.THEME) || DEFAULTS.THEME;
 }
 
 /**
@@ -56,14 +57,14 @@ export function getCurrentTheme() {
  */
 export function getTheme(themeName = null) {
     const name = themeName || getCurrentTheme();
-    return themes[name] || themes[DEFAULT_THEME];
+    return themes[name] || themes[DEFAULTS.THEME];
 }
 
 /**
  * Get all available theme names
  */
 export function getAvailableThemes() {
-    return Object.keys(themes).sort();
+    return ALL_THEMES;
 }
 
 /**
@@ -78,7 +79,7 @@ export function isValidTheme(themeName) {
  */
 export function saveTheme(themeName) {
     if (isValidTheme(themeName)) {
-        localStorage.setItem(LS_THEME_KEY, themeName);
+        localStorage.setItem(STORAGE_KEYS.THEME, themeName);
         return true;
     }
     return false;
@@ -90,7 +91,7 @@ export function saveTheme(themeName) {
 export function switchTheme(editorView, themeName, themeCompartment) {
     if (!isValidTheme(themeName)) {
         throw new Error(
-            `Unknown theme: ${themeName}. Available themes: ${getAvailableThemes().join(", ")}`
+            ERROR_MESSAGES.UNKNOWN_THEME(themeName, getAvailableThemes())
         );
     }
 
@@ -117,29 +118,13 @@ export function getThemeInfo(themeName) {
         return null;
     }
 
-    // Categorize themes
-    const lightThemes = [
-        "solarized-light",
-        "github-light",
-        "material-light",
-        "gruvbox-light",
-        "tokyo-night-day",
-        "basic-light"
-    ];
-    const darkThemes = [
-        "nord",
-        "solarized-dark",
-        "github-dark",
-        "material-dark",
-        "gruvbox-dark",
-        "tokyo-night",
-        "tokyo-night-storm",
-        "basic-dark"
-    ];
+    // Use centralized theme categorization
+    const lightThemes = THEMES.LIGHT;
+    const darkThemes = THEMES.DARK;
 
     return {
         name: themeName,
-        type: lightThemes.includes(themeName) ? "light" : "dark",
+        type: THEMES.LIGHT.includes(themeName) ? "light" : "dark",
         family: themeName.split("-")[0] // e.g., "solarized", "github", etc.
     };
 }

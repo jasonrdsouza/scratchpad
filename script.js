@@ -78,19 +78,23 @@ const initialWrap = getInitialWrapState();
 // Create extensions array
 const extensions = [
     basicSetup,
-    vim(),
     keymap.of([
         indentWithTab, // Enable tab insertion instead of focus navigation
-        // Override Ctrl+V to enable vim block visual mode instead of browser paste
+        // Use Ctrl+Q as alternative to Ctrl+V for block visual mode (common vim workaround)
         {
-            key: "Ctrl-v",
+            key: "Ctrl-q",
             preventDefault: true,
-            run: () => {
-                // Let vim handle Ctrl+V for block visual mode
-                return false; // Return false to allow vim to handle the key
+            run: (view) => {
+                const cm = getCM(view);
+                if (cm && Vim && Vim.handleKey) {
+                    Vim.handleKey(cm, "<C-v>");
+                    return true;
+                }
+                return false;
             }
         }
     ]),
+    vim(), // Vim should come after keymap to have access to our override
     themeCompartment.of(getTheme()), // Use theme compartment for dynamic switching
     languageCompartment.of(
         initialFt && languages[initialFt] ? languages[initialFt]() : []

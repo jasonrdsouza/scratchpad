@@ -6,6 +6,7 @@ import { EditorState } from "@codemirror/state";
 export const LS_CONTENT_KEY = "vim-scratchpad-content";
 export const LS_FT_KEY = "vim-scratchpad-filetype";
 export const LS_WRAP_KEY = "vim-scratchpad-wrap";
+export const LS_RELATIVENUMBER_KEY = "vim-scratchpad-relativenumber";
 export const LS_VIM_COMMAND_HISTORY_KEY = "vim-command-history";
 export const LS_VIM_SEARCH_HISTORY_KEY = "vim-search-history";
 export const LS_EDITOR_STATE_KEY = "editor-state";
@@ -169,6 +170,14 @@ export function getInitialFiletype() {
 export function getInitialWrapState() {
     const wrap = localStorage.getItem(LS_WRAP_KEY);
     return wrap === "true";
+}
+
+/**
+ * Get initial relative number state from localStorage (default to false - absolute numbers)
+ */
+export function getInitialRelativeNumberState() {
+    const relativeNumber = localStorage.getItem(LS_RELATIVENUMBER_KEY);
+    return relativeNumber === "true";
 }
 
 /**

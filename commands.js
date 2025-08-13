@@ -1,5 +1,5 @@
 import { Vim } from "@replit/codemirror-vim";
-import { saveContent } from "./state-manager.js";
+import { saveContent, LS_RELATIVENUMBER_KEY } from "./state-manager.js";
 import {
     switchTheme,
     getAvailableThemes,
@@ -10,7 +10,8 @@ import { executionEngine } from "./execution/engine.js";
 import { formatForConsole } from "./execution/formatters.js";
 import { formatText } from "./formatting.js";
 import { getMainHelp, getTopicHelp, getAvailableTopics } from "./help.js";
-import { highlightWhitespace } from "@codemirror/view";
+import { highlightWhitespace, lineNumbers } from "@codemirror/view";
+import { lineNumbersRelative } from "@uiw/codemirror-extensions-line-numbers-relative";
 import { EditorView } from "codemirror";
 
 /**
@@ -183,7 +184,8 @@ export function registerVimCommands(
     languageCompartment,
     themeCompartment,
     whitespaceCompartment,
-    wrapCompartment
+    wrapCompartment,
+    lineNumberCompartment
 ) {
     // Make editorView globally accessible for commands
     window.editorView = editorView;
@@ -200,6 +202,36 @@ export function registerVimCommands(
     Vim.defineEx("set", "set", (cm, params) => {
         if (params.args && params.args.length > 0) {
             const arg = params.args[0];
+
+            // Handle relativenumber options (with proper vim abbreviations + common shortcuts)
+            if (
+                arg === "relativenumber" ||
+                arg === "relati" ||
+                arg === "rela" ||
+                arg === "rnu"
+            ) {
+                editorView.dispatch({
+                    effects:
+                        lineNumberCompartment.reconfigure(lineNumbersRelative)
+                });
+                localStorage.setItem(LS_RELATIVENUMBER_KEY, "true");
+                console.log("Switched to relative line numbers");
+                showExecutionResult("Relative line numbers enabled", false);
+                return;
+            } else if (
+                arg === "norelativenumber" ||
+                arg === "norelati" ||
+                arg === "norela" ||
+                arg === "nornu"
+            ) {
+                editorView.dispatch({
+                    effects: lineNumberCompartment.reconfigure(lineNumbers())
+                });
+                localStorage.setItem(LS_RELATIVENUMBER_KEY, "false");
+                console.log("Switched to absolute line numbers");
+                showExecutionResult("Absolute line numbers enabled", false);
+                return;
+            }
 
             // Handle wrap/nowrap
             if (arg === "wrap") {
@@ -589,4 +621,23 @@ export function registerVimCommands(
     // Theme switching commands (vim standard + alternative)
     Vim.defineEx("colorscheme", "colo", switchThemeCommand);
     Vim.defineEx("theme", "theme", switchThemeCommand);
+
+    // Line number commands (relative/absolute) with proper vim abbreviations
+    Vim.defineEx("relativenumber", "rela", () => {
+        editorView.dispatch({
+            effects: lineNumberCompartment.reconfigure(lineNumbersRelative)
+        });
+        localStorage.setItem(LS_RELATIVENUMBER_KEY, "true");
+        console.log("Switched to relative line numbers");
+        showExecutionResult("Relative line numbers enabled", false);
+    });
+
+    Vim.defineEx("norelativenumber", "norela", () => {
+        editorView.dispatch({
+            effects: lineNumberCompartment.reconfigure(lineNumbers())
+        });
+        localStorage.setItem(LS_RELATIVENUMBER_KEY, "false");
+        console.log("Switched to absolute line numbers");
+        showExecutionResult("Absolute line numbers enabled", false);
+    });
 }

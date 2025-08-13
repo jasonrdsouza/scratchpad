@@ -53,6 +53,9 @@ importers:
       '@replit/codemirror-vim':
         specifier: ^6.3.0
         version: 6.3.0(@codemirror/commands@6.8.1)(@codemirror/language@6.11.2)(@codemirror/search@6.5.11)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)
+      '@uiw/codemirror-extensions-line-numbers-relative':
+        specifier: ^4.24.2
+        version: 4.24.2(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)
       '@uiw/codemirror-themes-all':
         specifier: ^4.24.1
         version: 4.24.1(@codemirror/language@6.11.2)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)
@@ -436,6 +439,12 @@ packages:
 
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
+
+  '@uiw/codemirror-extensions-line-numbers-relative@4.24.2':
+    resolution: {integrity: sha512-lBm416dR+VEqbppxyTrwFyUWSc0sFqb3sKXvFSGPxvhSDBfBHPy2tMZg49Q3TNt1HEyvgRMwljz50EDsUJVxFw==}
+    peerDependencies:
+      '@codemirror/state': '>=6.0.0'
+      '@codemirror/view': '>=6.0.0'
 
   '@uiw/codemirror-theme-abcdef@4.24.1':
     resolution: {integrity: sha512-4L2L1ph7BngWdiB/oQPhhSILqvq2R3yUw71lvVovJ4GwIs1rEJXj5QhhgpTRn2XwNHMTobz1HsWsfmoGId0tYA==}
@@ -1031,6 +1040,11 @@ snapshots:
     optional: true
 
   '@types/estree@1.0.8': {}
+
+  '@uiw/codemirror-extensions-line-numbers-relative@4.24.2(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)':
+    dependencies:
+      '@codemirror/state': 6.5.2
+      '@codemirror/view': 6.38.1
 
   '@uiw/codemirror-theme-abcdef@4.24.1(@codemirror/language@6.11.2)(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)':
     dependencies:

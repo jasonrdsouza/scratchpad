@@ -130,6 +130,41 @@ const helpContent = {
             "",
             "Note: Theme preference is automatically saved and restored."
         ]
+    },
+
+    relativenumber: {
+        title: "RELATIVE LINE NUMBERS HELP",
+        content: [
+            "Toggle between relative and absolute line numbers:",
+            "",
+            "Direct Commands:",
+            "  :relativenumber    - Enable relative line numbers",
+            "  :rela              - Enable relative line numbers (short form)",
+            "  :norelativenumber  - Enable absolute line numbers",
+            "  :norela            - Enable absolute line numbers (short form)",
+            "",
+            "Set Commands:",
+            "  :set relativenumber   - Enable relative line numbers",
+            "  :set rela             - Enable relative line numbers (short form)",
+            "  :set rnu              - Enable relative line numbers (common shortcut)",
+            "  :set norelativenumber - Enable absolute line numbers",
+            "  :set norela           - Enable absolute line numbers (short form)",
+            "  :set nornu            - Enable absolute line numbers (common shortcut)",
+            "",
+            "How Relative Line Numbers Work:",
+            "  • Current line shows absolute line number",
+            "  • Other lines show distance from current line",
+            "  • Numbers update automatically as cursor moves",
+            "  • Useful for vim motions like '5j' or '3k'",
+            "",
+            "Examples:",
+            "  :rela              - Enable relative line numbers",
+            "  :set rnu           - Enable relative line numbers",
+            "  :norela            - Switch back to absolute numbers",
+            "  :set nornu         - Switch back to absolute numbers",
+            "",
+            "Note: Line number preference is automatically saved and restored."
+        ]
     }
 };
 
@@ -141,7 +176,11 @@ const helpAliases = {
     js: "javascript",
     eval: "javascript",
     colorscheme: "theme",
-    colo: "theme"
+    colo: "theme",
+    rela: "relativenumber",
+    norela: "relativenumber",
+    rnu: "relativenumber",
+    nornu: "relativenumber"
 };
 
 /**
@@ -190,6 +229,12 @@ export function getMainHelp(supportedLanguages) {
         "  :set wrap      - Enable soft line wrapping",
         "  :set nowrap    - Disable soft line wrapping",
         "  :whitespace    - Toggle whitespace visibility (spaces, tabs)",
+        "",
+        "Line Numbers:",
+        "  :rela          - Enable relative line numbers",
+        "  :norela        - Enable absolute line numbers",
+        "  :set rnu       - Enable relative line numbers (alternative)",
+        "  :set nornu     - Enable absolute line numbers (alternative)",
         "",
         "Other Commands:",
         "  :registers     - Show all vim registers",

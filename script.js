@@ -13,13 +13,15 @@ import { sql } from "@codemirror/lang-sql";
 import { yaml } from "@codemirror/lang-yaml";
 import { xml } from "@codemirror/lang-xml";
 import { go } from "@codemirror/lang-go";
-import { highlightWhitespace } from "@codemirror/view";
+import { highlightWhitespace, lineNumbers } from "@codemirror/view";
+import { lineNumbersRelative } from "@uiw/codemirror-extensions-line-numbers-relative";
 import {
     LS_FT_KEY,
     loadVimHistory,
     getInitialContent,
     getInitialFiletype,
     getInitialWrapState,
+    getInitialRelativeNumberState,
     restoreEditorState,
     setupAutosave
 } from "./state-manager.js";
@@ -49,6 +51,7 @@ let languageCompartment = new Compartment();
 let themeCompartment = new Compartment();
 let whitespaceCompartment = new Compartment();
 let wrapCompartment = new Compartment();
+let lineNumberCompartment = new Compartment();
 
 const languages = {
     markdown: () => markdown(),
@@ -74,6 +77,7 @@ const languages = {
 const initialContent = getInitialContent();
 const initialFt = getInitialFiletype();
 const initialWrap = getInitialWrapState();
+const initialRelativeNumber = getInitialRelativeNumberState();
 
 // Create extensions array
 const extensions = [
@@ -100,7 +104,10 @@ const extensions = [
         initialFt && languages[initialFt] ? languages[initialFt]() : []
     ),
     whitespaceCompartment.of([]), // Start with whitespace hidden
-    wrapCompartment.of(initialWrap ? [EditorView.lineWrapping] : []) // Use saved wrap state
+    wrapCompartment.of(initialWrap ? [EditorView.lineWrapping] : []), // Use saved wrap state
+    lineNumberCompartment.of(
+        initialRelativeNumber ? lineNumbersRelative : lineNumbers()
+    ) // Line numbers based on saved preference
 ];
 
 let editorView;
@@ -145,5 +152,6 @@ registerVimCommands(
     languageCompartment,
     themeCompartment,
     whitespaceCompartment,
-    wrapCompartment
+    wrapCompartment,
+    lineNumberCompartment
 );

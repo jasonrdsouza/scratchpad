@@ -18,6 +18,7 @@ import {
     STORAGE_KEYS,
     DEFAULTS,
     ALL_THEMES,
+    THEMES,
     ERROR_MESSAGES
 } from "./config.js";
 
@@ -104,7 +105,29 @@ export function switchTheme(editorView, themeName, themeCompartment) {
     editorView.dispatch({
         effects: themeCompartment.reconfigure(newTheme)
     });
+    applyThemeColors(editorView, themeName);
 
     console.log(`Switched to theme: ${themeName}`);
     return themeName;
+}
+
+/**
+ * Apply the editor theme's colors to the surrounding UI (result popup, mode
+ * indicator, page background and browser title bar) via CSS variables
+ */
+export function applyThemeColors(editorView, themeName = getCurrentTheme()) {
+    const background = getComputedStyle(editorView.dom).backgroundColor;
+    const foreground = getComputedStyle(editorView.contentDOM).color;
+
+    const root = document.documentElement;
+    root.style.setProperty("--editor-bg", background);
+    root.style.setProperty("--editor-fg", foreground);
+    root.dataset.theme = themeName;
+    root.dataset.themeType = THEMES.LIGHT.includes(themeName)
+        ? "light"
+        : "dark";
+
+    document
+        .querySelector('meta[name="theme-color"]')
+        ?.setAttribute("content", background);
 }

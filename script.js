@@ -26,7 +26,7 @@ import {
 } from "./state-manager.js";
 import { TIMING } from "./config.js";
 import { registerVimCommands } from "./commands.js";
-import { getTheme } from "./theme-manager.js";
+import { getTheme, applyThemeColors } from "./theme-manager.js";
 
 const modeIndicator = document.getElementById("vim-mode-indicator");
 
@@ -127,6 +127,9 @@ if (restoredState) {
         parent: document.querySelector("#editor")
     });
 }
+
+// Match the surrounding UI to the editor theme
+applyThemeColors(editorView);
 
 // Set up vim mode change listener using the correct API
 const cm = getCM(editorView);

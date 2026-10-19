@@ -56,6 +56,10 @@ html {
     background-color: #b48ead; /* nord15 */
 }
 
+#vim-mode-indicator.replace {
+    background-color: #d08770; /* nord12 */
+}
+
 #js-result-display {
     position: absolute;
     bottom: 60px;

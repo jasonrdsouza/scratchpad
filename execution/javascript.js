@@ -43,15 +43,4 @@ export class JavaScriptExecutor extends Executor {
             throw new Error(`JavaScript execution failed: ${error.message}`);
         }
     }
-
-    /**
-     * Get display name for this executor
-     * @returns {string} Display name
-     */
-    getDisplayName() {
-        return "JavaScript";
-    }
 }
-
-// Export convenience instance
-export const javascriptExecutor = new JavaScriptExecutor();

@@ -3,8 +3,7 @@ import { saveContent } from "./state-manager.js";
 import {
     switchTheme,
     getAvailableThemes,
-    getCurrentTheme,
-    getTheme
+    getCurrentTheme
 } from "./theme-manager.js";
 import { executionEngine } from "./execution/engine.js";
 import { formatForConsole } from "./execution/formatters.js";
@@ -18,65 +17,23 @@ import {
     TIMING,
     REGISTERS,
     VIM_ABBREVIATIONS,
+    HELP,
     ERROR_MESSAGES,
     SUCCESS_MESSAGES
 } from "./config.js";
 
 /**
- * Get code from vim registers (unnamed or named)
+ * Get the text held in a vim register, or null if it's empty
+ * @param {string} registerName - Register name (" for the unnamed register)
  */
-function getCodeFromRegister(registerName = null) {
-    // First try to get yanked text from vim registers
-    try {
-        const vimGlobalState = Vim.getVimGlobalState_();
-        const registerController = vimGlobalState.registerController;
-
-        if (registerName) {
-            // Get text from named register
-            const namedRegister = registerController.registers[registerName];
-            if (
-                namedRegister &&
-                namedRegister.keyBuffer &&
-                namedRegister.keyBuffer.length > 0
-            ) {
-                const registerText = namedRegister.keyBuffer[0];
-                if (registerText && registerText.trim()) {
-                    return registerText;
-                }
-            }
-            throw new Error(ERROR_MESSAGES.REGISTER_NOT_FOUND(registerName));
-        } else {
-            // Use unnamed register
-            const unnamedReg = registerController.unnamedRegister;
-            if (
-                unnamedReg &&
-                unnamedReg.keyBuffer &&
-                unnamedReg.keyBuffer.length > 0
-            ) {
-                const yankedText = unnamedReg.keyBuffer[0];
-                if (yankedText && yankedText.trim()) {
-                    return yankedText;
-                }
-            }
-        }
-    } catch (error) {
-        if (registerName) {
-            throw error; // Re-throw named register errors
-        }
-        // Continue to fallbacks for unnamed register
-    }
-
-    // Fall back to CodeMirror selection or current line
-    const state = window.editorView.state;
-    const selection = state.selection.main;
-
-    if (!selection.empty) {
-        return state.doc.sliceString(selection.from, selection.to);
-    } else {
-        // Return current line
-        const line = state.doc.lineAt(selection.head);
-        return line.text;
-    }
+function getRegisterText(registerName) {
+    const registerController = Vim.getVimGlobalState_().registerController;
+    const register =
+        registerName === REGISTERS.UNNAMED
+            ? registerController.unnamedRegister
+            : registerController.registers[registerName];
+    const text = register?.keyBuffer?.[0];
+    return text && text.trim() ? text : null;
 }
 
 /**
@@ -85,17 +42,39 @@ function getCodeFromRegister(registerName = null) {
  * inline code like `:js 5` or `:js x` is evaluated rather than looked up.
  */
 function isRegisterArgument(arg) {
-    if (arg.length !== 1 || !REGISTERS.EXECUTABLE_PATTERN.test(arg)) {
-        return false;
+    return (
+        arg.length === 1 &&
+        REGISTERS.EXECUTABLE_PATTERN.test(arg) &&
+        getRegisterText(arg) !== null
+    );
+}
+
+/**
+ * Get the document range an ex command applies to: its line range if one was
+ * given (e.g. :'<,'>cmd or :10,20cmd), otherwise the selection or current line.
+ * Vim passes range lines 0-based.
+ */
+function getCommandRange(state, params) {
+    if (params.line !== undefined) {
+        const lastLine = state.doc.lines - 1;
+        const start = Math.max(0, Math.min(params.line, lastLine));
+        const end = Math.max(
+            start,
+            Math.min(params.lineEnd ?? params.line, lastLine)
+        );
+        return {
+            from: state.doc.line(start + 1).from,
+            to: state.doc.line(end + 1).to
+        };
     }
 
-    const registerController = Vim.getVimGlobalState_().registerController;
-    const register =
-        arg === REGISTERS.UNNAMED
-            ? registerController.unnamedRegister
-            : registerController.registers[arg];
-    const text = register?.keyBuffer?.[0];
-    return Boolean(text && text.trim());
+    const selection = state.selection.main;
+    if (!selection.empty) {
+        return { from: selection.from, to: selection.to };
+    }
+
+    const line = state.doc.lineAt(selection.head);
+    return { from: line.from, to: line.to };
 }
 
 /**
@@ -120,70 +99,52 @@ async function executeCode(code, language = null) {
     return result;
 }
 
+// Result popup element and its timers, shared across calls
+let resultDisplay = null;
+let hideTimer = null;
+let removeTimer = null;
+
+function startHideTimer() {
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(hideResult, TIMING.RESULT_DISPLAY_TIMEOUT_MS);
+}
+
+function hideResult() {
+    resultDisplay.classList.remove("show");
+    removeTimer = setTimeout(
+        () => resultDisplay.remove(),
+        TIMING.RESULT_HIDE_ANIMATION_MS
+    );
+}
+
 /**
  * Show execution results with styled popup
  */
 function showExecutionResult(result, isError = false) {
-    // Create or update result display
-    let resultDisplay = document.getElementById("js-result-display");
-
     if (!resultDisplay) {
         resultDisplay = document.createElement("div");
         resultDisplay.id = "js-result-display";
+
+        // Pause auto-hide while hovering
+        resultDisplay.addEventListener("mouseenter", () =>
+            clearTimeout(hideTimer)
+        );
+        resultDisplay.addEventListener("mouseleave", startHideTimer);
+    }
+
+    // Cancel any pending hide/remove from a previous result
+    clearTimeout(removeTimer);
+    if (!resultDisplay.isConnected) {
         document.body.appendChild(resultDisplay);
     }
 
-    // Reset classes and set content
-    resultDisplay.className = "";
     resultDisplay.textContent = result;
+    resultDisplay.className = isError ? "error" : "success";
 
-    // Apply appropriate styling class
-    if (isError) {
-        resultDisplay.classList.add("error");
-    } else {
-        resultDisplay.classList.add("success");
-    }
-
-    // Show the result
+    // Force a reflow so the fade-in transition runs when re-attached
+    void resultDisplay.offsetWidth;
     resultDisplay.classList.add("show");
 
-    // Clear any existing timer
-    if (resultDisplay.hideTimer) {
-        clearTimeout(resultDisplay.hideTimer);
-    }
-
-    // Function to hide the result
-    const hideResult = () => {
-        if (resultDisplay) {
-            resultDisplay.classList.remove("show");
-            setTimeout(() => {
-                if (resultDisplay && resultDisplay.parentNode) {
-                    resultDisplay.parentNode.removeChild(resultDisplay);
-                }
-            }, TIMING.RESULT_HIDE_ANIMATION_MS);
-        }
-    };
-
-    // Function to start the hide timer
-    const startHideTimer = () => {
-        resultDisplay.hideTimer = setTimeout(
-            hideResult,
-            TIMING.RESULT_DISPLAY_TIMEOUT_MS
-        );
-    };
-
-    // Add hover event listeners to pause/resume auto-hide
-    resultDisplay.addEventListener("mouseenter", () => {
-        if (resultDisplay.hideTimer) {
-            clearTimeout(resultDisplay.hideTimer);
-        }
-    });
-
-    resultDisplay.addEventListener("mouseleave", () => {
-        startHideTimer();
-    });
-
-    // Start the initial timer
     startHideTimer();
 }
 
@@ -217,8 +178,24 @@ export function registerVimCommands(
     wrapCompartment,
     lineNumberCompartment
 ) {
-    // Make editorView globally accessible for commands
+    // Make editorView globally accessible (e.g. from :js)
     window.editorView = editorView;
+
+    // Switch between relative and absolute line numbers
+    const setRelativeNumbers = (relative) => {
+        editorView.dispatch({
+            effects: lineNumberCompartment.reconfigure(
+                relative ? lineNumbersRelative : lineNumbers()
+            )
+        });
+        localStorage.setItem(STORAGE_KEYS.RELATIVE_NUMBERS, String(relative));
+        showExecutionResult(
+            relative
+                ? SUCCESS_MESSAGES.RELATIVE_NUMBERS_ENABLED
+                : SUCCESS_MESSAGES.ABSOLUTE_NUMBERS_ENABLED,
+            false
+        );
+    };
 
     // File operations
     Vim.defineEx("w", "w", () => saveContent(editorView));
@@ -235,34 +212,12 @@ export function registerVimCommands(
 
             // Handle relativenumber options (with proper vim abbreviations + common shortcuts)
             if (VIM_ABBREVIATIONS.RELATIVE_NUMBER.ENABLE.includes(arg)) {
-                editorView.dispatch({
-                    effects:
-                        lineNumberCompartment.reconfigure(lineNumbersRelative)
-                });
-                localStorage.setItem(STORAGE_KEYS.RELATIVE_NUMBERS, "true");
-                console.log("Switched to relative line numbers");
-                showExecutionResult(
-                    SUCCESS_MESSAGES.RELATIVE_NUMBERS_ENABLED,
-                    false
-                );
-                return;
+                setRelativeNumbers(true);
             } else if (
                 VIM_ABBREVIATIONS.RELATIVE_NUMBER.DISABLE.includes(arg)
             ) {
-                editorView.dispatch({
-                    effects: lineNumberCompartment.reconfigure(lineNumbers())
-                });
-                localStorage.setItem(STORAGE_KEYS.RELATIVE_NUMBERS, "false");
-                console.log("Switched to absolute line numbers");
-                showExecutionResult(
-                    SUCCESS_MESSAGES.ABSOLUTE_NUMBERS_ENABLED,
-                    false
-                );
-                return;
-            }
-
-            // Handle wrap/nowrap
-            if (arg === "wrap") {
+                setRelativeNumbers(false);
+            } else if (arg === "wrap") {
                 editorView.dispatch({
                     effects: wrapCompartment.reconfigure([
                         EditorView.lineWrapping
@@ -289,50 +244,31 @@ export function registerVimCommands(
         }
     });
 
-    // Shared code execution command handler
-    const handleExecutionCommand = async (cm, params, language = null) => {
+    // Shared code execution command handler:
+    //   :js <code>      - run inline code
+    //   :js a           - run register a (letters or ", if non-empty)
+    //   :'<,'>js        - run a line range (e.g. a visual selection)
+    //   :js             - run the current line
+    const handleExecutionCommand = async (cm, params, language) => {
         try {
             // Use the raw argument string so inline code keeps its whitespace
             const argString = (params.argString || "").trim();
-            if (argString) {
-                if (isRegisterArgument(argString)) {
-                    const result = await executionEngine.executeFromRegister(
-                        argString,
-                        getCodeFromRegister,
-                        language
-                    );
+            let code;
 
-                    if (result.success) {
-                        console.log(
-                            `${result.language} result:`,
-                            formatForConsole(result.rawResult)
-                        );
-                        showExecutionResult(result.formattedResult, false);
-                    } else {
-                        showExecutionResult(result.formattedResult, true);
-                    }
-                } else {
-                    // Treat as inline code
-                    await executeCode(argString, language);
-                }
+            if (argString && isRegisterArgument(argString)) {
+                code = getRegisterText(argString);
+            } else if (argString) {
+                code = argString;
             } else {
-                // No args - get from unnamed register (yanked code)
-                const result = await executionEngine.executeFromRegister(
-                    null,
-                    getCodeFromRegister,
-                    language
-                );
-
-                if (result.success) {
-                    console.log(
-                        `${result.language} result:`,
-                        formatForConsole(result.rawResult)
-                    );
-                    showExecutionResult(result.formattedResult, false);
-                } else {
-                    showExecutionResult(result.formattedResult, true);
-                }
+                const { from, to } = getCommandRange(editorView.state, params);
+                code = editorView.state.doc.sliceString(from, to);
             }
+
+            if (!code.trim()) {
+                throw new Error(ERROR_MESSAGES.NO_CODE_FOUND);
+            }
+
+            await executeCode(code.trim(), language);
         } catch (error) {
             showExecutionResult(error.message, true);
         }
@@ -357,8 +293,8 @@ export function registerVimCommands(
     // Register inspection command
     Vim.defineEx("registers", "registers", (cm, params) => {
         try {
-            const vimGlobalState = Vim.getVimGlobalState_();
-            const registerController = vimGlobalState.registerController;
+            const registerController =
+                Vim.getVimGlobalState_().registerController;
 
             // Check if a specific register was requested
             const registerName =
@@ -366,18 +302,9 @@ export function registerVimCommands(
 
             if (registerName) {
                 // Show specific register
-                const register =
-                    registerController.registers[registerName] ||
-                    (registerName === '"'
-                        ? registerController.unnamedRegister
-                        : null);
+                const content = getRegisterText(registerName);
 
-                if (
-                    register &&
-                    register.keyBuffer &&
-                    register.keyBuffer.length > 0
-                ) {
-                    const content = register.keyBuffer[0];
+                if (content !== null) {
                     console.log(
                         `Register '${registerName}':`,
                         JSON.stringify(content)
@@ -396,31 +323,22 @@ export function registerVimCommands(
             } else {
                 // Show all registers with content
                 const registerData = {};
-                let registerCount = 0;
 
-                // Collect unnamed register
-                const unnamedReg = registerController.unnamedRegister;
-                if (
-                    unnamedReg &&
-                    unnamedReg.keyBuffer &&
-                    unnamedReg.keyBuffer.length > 0
-                ) {
-                    registerData['"" (unnamed)'] = unnamedReg.keyBuffer[0];
-                    registerCount++;
+                const unnamedText = getRegisterText(REGISTERS.UNNAMED);
+                if (unnamedText !== null) {
+                    registerData['"" (unnamed)'] = unnamedText;
                 }
 
-                // Collect named registers
-                const registers = registerController.registers;
-                for (const [regName, register] of Object.entries(registers)) {
-                    if (
-                        register &&
-                        register.keyBuffer &&
-                        register.keyBuffer.length > 0
-                    ) {
-                        registerData[`"${regName}"`] = register.keyBuffer[0];
-                        registerCount++;
+                for (const regName of Object.keys(
+                    registerController.registers
+                )) {
+                    const text = getRegisterText(regName);
+                    if (text !== null) {
+                        registerData[`"${regName}"`] = text;
                     }
                 }
+
+                const registerCount = Object.keys(registerData).length;
 
                 // Display formatted output
                 console.log("=== VIM REGISTERS ===");
@@ -428,17 +346,19 @@ export function registerVimCommands(
                     console.table(registerData);
 
                     // Create a more readable summary for the popup
+                    const maxLength = HELP.MAX_REGISTER_DISPLAY_LENGTH;
                     const summary = Object.entries(registerData)
                         .map(([reg, content]) => {
                             // Truncate long content for display
                             const truncatedContent =
-                                content.length > 50
-                                    ? content.substring(0, 47) + "..."
+                                content.length > maxLength
+                                    ? content.substring(0, maxLength - 3) +
+                                      "..."
                                     : content;
-                            // Replace newlines with ↵ for better display
+                            // Replace newlines for better display
                             const displayContent = truncatedContent.replace(
                                 /\n/g,
-                                "↵"
+                                HELP.REGISTER_NEWLINE_REPLACEMENT
                             );
                             return `${reg}: ${displayContent}`;
                         })
@@ -463,25 +383,11 @@ export function registerVimCommands(
     const switchThemeCommand = (cm, params) => {
         try {
             if (params.args && params.args.length > 0) {
-                const themeName = params.args[0];
-
-                // Use theme compartment for clean theme switching
-                if (!getAvailableThemes().includes(themeName)) {
-                    throw new Error(
-                        `Unknown theme: ${themeName}. Available themes: ${getAvailableThemes().join(", ")}`
-                    );
-                }
-
-                // Get the new theme and reconfigure
-                const newTheme = getTheme(themeName);
-                editorView.dispatch({
-                    effects: themeCompartment.reconfigure(newTheme)
-                });
-
-                // Save theme preference
-                localStorage.setItem(STORAGE_KEYS.THEME, themeName);
-
-                console.log(SUCCESS_MESSAGES.THEME_SWITCHED(themeName));
+                const themeName = switchTheme(
+                    editorView,
+                    params.args[0],
+                    themeCompartment
+                );
                 showExecutionResult(
                     SUCCESS_MESSAGES.THEME_SWITCHED(themeName),
                     false
@@ -506,40 +412,14 @@ export function registerVimCommands(
     // Format command for JSON pretty-printing
     Vim.defineEx("fmt", "fmt", (cm, params) => {
         try {
-            // Get the text to format
-            const state = window.editorView.state;
-            const selection = state.selection.main;
-
-            let textToFormat;
-            let replaceRange;
-
-            // Check if we have a vim range (like :'<,'>fmt or :10,20fmt)
-            if (params.line !== undefined && params.lineEnd !== undefined) {
-                // Use vim range - convert from 1-based line numbers to 0-based positions
-                const startLine = Math.max(0, params.line - 1);
-                const endLine = Math.min(
-                    state.doc.lines - 1,
-                    params.lineEnd - 1
-                );
-
-                const fromPos = state.doc.line(startLine + 1).from;
-                const toPos = state.doc.line(endLine + 1).to;
-
-                textToFormat = state.doc.sliceString(fromPos, toPos);
-                replaceRange = { from: fromPos, to: toPos };
-            } else if (!selection.empty) {
-                // Format visual selection
-                textToFormat = state.doc.sliceString(
-                    selection.from,
-                    selection.to
-                );
-                replaceRange = { from: selection.from, to: selection.to };
-            } else {
-                // Format current line
-                const line = state.doc.lineAt(selection.head);
-                textToFormat = line.text;
-                replaceRange = { from: line.from, to: line.to };
-            }
+            // Format the command's range (e.g. :'<,'>fmt or :10,20fmt),
+            // otherwise the selection or current line
+            const state = editorView.state;
+            const replaceRange = getCommandRange(state, params);
+            const textToFormat = state.doc.sliceString(
+                replaceRange.from,
+                replaceRange.to
+            );
 
             // Determine format type (default to auto-detect)
             const formatType =
@@ -551,7 +431,7 @@ export function registerVimCommands(
             const result = formatText(textToFormat, formatType);
 
             // Replace the text in the editor
-            window.editorView.dispatch({
+            editorView.dispatch({
                 changes: {
                     from: replaceRange.from,
                     to: replaceRange.to,
@@ -651,21 +531,6 @@ export function registerVimCommands(
     Vim.defineEx("theme", "theme", switchThemeCommand);
 
     // Line number commands (relative/absolute) with proper vim abbreviations
-    Vim.defineEx("relativenumber", "rela", () => {
-        editorView.dispatch({
-            effects: lineNumberCompartment.reconfigure(lineNumbersRelative)
-        });
-        localStorage.setItem(STORAGE_KEYS.RELATIVE_NUMBERS, "true");
-        console.log("Switched to relative line numbers");
-        showExecutionResult(SUCCESS_MESSAGES.RELATIVE_NUMBERS_ENABLED, false);
-    });
-
-    Vim.defineEx("norelativenumber", "norela", () => {
-        editorView.dispatch({
-            effects: lineNumberCompartment.reconfigure(lineNumbers())
-        });
-        localStorage.setItem(STORAGE_KEYS.RELATIVE_NUMBERS, "false");
-        console.log("Switched to absolute line numbers");
-        showExecutionResult(SUCCESS_MESSAGES.ABSOLUTE_NUMBERS_ENABLED, false);
-    });
+    Vim.defineEx("relativenumber", "rela", () => setRelativeNumbers(true));
+    Vim.defineEx("norelativenumber", "norela", () => setRelativeNumbers(false));
 }

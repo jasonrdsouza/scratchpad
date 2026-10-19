@@ -33,33 +33,22 @@ function convertProxy(proxy) {
 export class PythonExecutor extends Executor {
     constructor() {
         super("Python");
-        this.pyodide = null;
-        this.isLoading = false;
         this.loadPromise = null;
     }
 
     /**
-     * Initialize Pyodide runtime (lazy loading)
+     * Initialize Pyodide runtime (lazy loading, shared across calls)
      * @returns {Promise<Object>} Pyodide instance
      */
-    async initializePyodide() {
-        if (this.pyodide) {
-            return this.pyodide;
+    initializePyodide() {
+        if (!this.loadPromise) {
+            this.loadPromise = this._loadPyodide().catch((error) => {
+                // Allow a retry on the next execution
+                this.loadPromise = null;
+                throw error;
+            });
         }
-
-        if (this.isLoading) {
-            return await this.loadPromise;
-        }
-
-        this.isLoading = true;
-        this.loadPromise = this._loadPyodide();
-
-        try {
-            this.pyodide = await this.loadPromise;
-            return this.pyodide;
-        } finally {
-            this.isLoading = false;
-        }
+        return this.loadPromise;
     }
 
     /**
@@ -126,32 +115,7 @@ export class PythonExecutor extends Executor {
 
             return result;
         } catch (error) {
-            // Handle Pyodide-specific errors
-            if (error.name === "PythonError") {
-                throw new Error(`Python execution failed: ${error.message}`);
-            }
-
-            // Re-throw with more context
             throw new Error(`Python execution failed: ${error.message}`);
         }
     }
-
-    /**
-     * Get display name for this executor
-     * @returns {string} Display name
-     */
-    getDisplayName() {
-        return "Python";
-    }
-
-    /**
-     * Check if Pyodide is loaded and ready
-     * @returns {boolean} True if ready to execute
-     */
-    isReady() {
-        return this.pyodide !== null && !this.isLoading;
-    }
 }
-
-// Export convenience instance
-export const pythonExecutor = new PythonExecutor();

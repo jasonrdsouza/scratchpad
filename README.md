@@ -12,7 +12,10 @@ A browser based, web first, vim backed, AI assisted scratchpad for quick notes, 
 - **Persistent storage** of content, vim command history, undo/redo history, and theme preferences
 - **Autosave** functionality to prevent data loss (only saves changed data)
 - **Clean, minimal interface** with vim mode indicator
-- **JavaScript execution** - Execute code from vim registers with `:js` and `:eval`, results stored in `"r` register
+- **Code execution** - Run JavaScript (`:js`, `:eval`) or Python (`:py`, `:python`) from the current line, a line range, a register, or inline; results stored in `"r` register
+- **Soft wrap** - `:set wrap` / `:set nowrap`
+- **Block visual mode** - `Ctrl+Q` (since `Ctrl+V` is taken by the browser's paste)
+- **Multi-tab safe** - Tabs pick up content saved in other tabs instead of overwriting it
 - **Register management** - Store and execute code snippets using vim's register system
 
 ## Development Preferences
@@ -57,7 +60,8 @@ Official CM6 packages only (with shorthand aliases):
 #### Storage Strategy
 
 - **localStorage for everything** - content, vim history, editor state
-- **Optimized autosave** - Only saves data when it has actually changed (every 5 seconds)
+- **Optimized autosave** - Only saves data when it has actually changed (every 5 seconds, and when the page is hidden or closed)
+- **Multiple tabs** - A tab only writes content it has edited since its last load/save, and adopts content saved by other tabs (via the `storage` event) when it has no unsaved edits
 - **State serialization** - Use CM6's built-in `toJSON`/`fromJSON` for editor state persistence
 - **Modular state management** - All persistence logic isolated in `state-manager.js`
 
@@ -141,7 +145,8 @@ The scratchpad includes a powerful code execution system:
 
 - **Inline code**: Run `:js 1+2+3` directly for simple expressions
 - **Current line**: Run `:js` or `:eval` on any line with JavaScript
-- **Visual selection**: Select code, yank with `y`, then run `:js`
+- **Visual selection / ranges**: Select lines with `V`, then `:` gives `:'<,'>js`; or give a range like `:10,20js`
+- **Yanked code**: Run `:js "` to execute the unnamed register
 - **Named registers**: Yank to register (`"ay`), execute with `:js a`. A single-letter argument is only treated as a register if that register has content; otherwise it's evaluated as code (so `:js 5` and `:js x` work)
 - **Global scope**: JavaScript runs via indirect `eval`, so `var`, function declarations and bare assignments persist between runs (`const`/`let` don't)
 - **Python output**: `print()` output is captured and shown with the result; top-level `await` works (e.g. `await micropip.install(...)`)
@@ -161,7 +166,7 @@ The scratchpad includes a powerful code execution system:
 // Inline execution - results stored in "r register
 :js Math.PI * 2
 
-// Multi-line - select, yank, :js
+// Multi-line - select with V, then :'<,'>js
 const x = 5;
 const y = 10;
 x + y

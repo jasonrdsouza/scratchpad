@@ -1,5 +1,5 @@
 import { EditorView, basicSetup } from "codemirror";
-import { EditorState, Compartment } from "@codemirror/state";
+import { Compartment } from "@codemirror/state";
 import { vim, Vim, getCM } from "@replit/codemirror-vim";
 import { keymap } from "@codemirror/view";
 import { indentWithTab } from "@codemirror/commands";
@@ -13,7 +13,7 @@ import { sql } from "@codemirror/lang-sql";
 import { yaml } from "@codemirror/lang-yaml";
 import { xml } from "@codemirror/lang-xml";
 import { go } from "@codemirror/lang-go";
-import { highlightWhitespace, lineNumbers } from "@codemirror/view";
+import { lineNumbers } from "@codemirror/view";
 import { lineNumbersRelative } from "@uiw/codemirror-extensions-line-numbers-relative";
 import {
     loadVimHistory,
@@ -134,6 +134,9 @@ cm.on("vim-mode-change", (modeObj) => {
     console.log("Vim mode changed:", modeObj);
     updateModeIndicator(modeObj);
 });
+
+// Vim starts in normal mode without emitting a mode change
+updateModeIndicator({ mode: "normal" });
 
 // Load vim history after vim is initialized
 setTimeout(() => {

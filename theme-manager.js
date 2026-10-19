@@ -18,7 +18,6 @@ import {
     STORAGE_KEYS,
     DEFAULTS,
     ALL_THEMES,
-    THEMES,
     ERROR_MESSAGES
 } from "./config.js";
 
@@ -108,23 +107,4 @@ export function switchTheme(editorView, themeName, themeCompartment) {
 
     console.log(`Switched to theme: ${themeName}`);
     return themeName;
-}
-
-/**
- * Get theme information for display
- */
-export function getThemeInfo(themeName) {
-    if (!isValidTheme(themeName)) {
-        return null;
-    }
-
-    // Use centralized theme categorization
-    const lightThemes = THEMES.LIGHT;
-    const darkThemes = THEMES.DARK;
-
-    return {
-        name: themeName,
-        type: THEMES.LIGHT.includes(themeName) ? "light" : "dark",
-        family: themeName.split("-")[0] // e.g., "solarized", "github", etc.
-    };
 }

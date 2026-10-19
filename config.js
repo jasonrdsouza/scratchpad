@@ -114,7 +114,8 @@ export const EXECUTION_LANGUAGES = {
 export const REGISTERS = {
     UNNAMED: '"',
     RESULT: "r",
-    VALID_PATTERN: /^[a-zA-Z0-9"=_]$/
+    // Registers that :js/:py accept as a source of code to run
+    EXECUTABLE_PATTERN: /^[a-zA-Z"]$/
 };
 
 /**

@@ -5,8 +5,27 @@
  * Provides safe execution with proper error handling and result processing.
  */
 
-import { Executor } from "./executor.js";
-import { getResultsRegister } from "./registers.js";
+import { Executor, OutputResult } from "./executor.js";
+
+/**
+ * Convert a Python object proxy to a plain JavaScript value and release it.
+ * Dicts become plain objects (not Maps); objects with no JavaScript
+ * equivalent (e.g. a pandas DataFrame) fall back to their Python str().
+ * @param {Object} proxy - PyProxy returned by Pyodide
+ * @returns {any} JavaScript value
+ */
+function convertProxy(proxy) {
+    try {
+        return proxy.toJs({
+            dict_converter: Object.fromEntries,
+            create_pyproxies: false
+        });
+    } catch (error) {
+        return proxy.toString();
+    } finally {
+        proxy.destroy();
+    }
+}
 
 /**
  * Python code executor using Pyodide WebAssembly runtime
@@ -88,12 +107,21 @@ export class PythonExecutor extends Executor {
             // Ensure Pyodide is loaded
             const pyodide = await this.initializePyodide();
 
-            // Execute the Python code
-            const result = pyodide.runPython(code);
+            // Capture print() output so it can be shown with the result
+            const output = [];
+            const capture = { batched: (line) => output.push(line) };
+            pyodide.setStdout(capture);
+            pyodide.setStderr(capture);
 
-            // Convert Python objects to JavaScript objects when possible
+            // Execute the Python code (async so top-level await works)
+            let result = await pyodide.runPythonAsync(code);
+
             if (result && typeof result.toJs === "function") {
-                return result.toJs();
+                result = convertProxy(result);
+            }
+
+            if (output.length > 0) {
+                return new OutputResult(output.join("\n"), result);
             }
 
             return result;

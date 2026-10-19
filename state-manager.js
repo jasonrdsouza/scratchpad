@@ -72,12 +72,16 @@ export function saveVimHistoryIfChanged() {
  * Save content only if changed
  */
 export function saveContentIfChanged(editorView) {
-    const currentContent = editorView.state.doc.toString();
-    const storedContent = localStorage.getItem(STORAGE_KEYS.CONTENT);
+    try {
+        const currentContent = editorView.state.doc.toString();
+        const storedContent = localStorage.getItem(STORAGE_KEYS.CONTENT);
 
-    if (currentContent !== storedContent) {
-        localStorage.setItem(STORAGE_KEYS.CONTENT, currentContent);
-        console.log("Auto-saved content.");
+        if (currentContent !== storedContent) {
+            localStorage.setItem(STORAGE_KEYS.CONTENT, currentContent);
+            console.log("Auto-saved content.");
+        }
+    } catch (error) {
+        console.error("Failed to save content:", error);
     }
 }
 
@@ -88,6 +92,8 @@ export function saveContent(editorView) {
     const content = editorView.state.doc.toString();
     localStorage.setItem(STORAGE_KEYS.CONTENT, content);
     console.log("Content saved.");
+    // Keep the editor state in sync so it isn't discarded as stale on reload
+    saveEditorState(editorView);
 }
 
 /**
@@ -181,6 +187,21 @@ export function restoreEditorState(extensions) {
             { extensions },
             stateFields
         );
+
+        // Content is the source of truth. If the editor state didn't get saved
+        // along with it (e.g. it hit the storage quota), it's stale - discard it
+        // rather than restoring an outdated document.
+        const savedContent = localStorage.getItem(STORAGE_KEYS.CONTENT);
+        if (
+            savedContent !== null &&
+            savedContent !== restoredState.doc.toString()
+        ) {
+            console.warn(
+                "Saved editor state is out of date with saved content; ignoring it."
+            );
+            return null;
+        }
+
         return restoredState;
     } catch (error) {
         console.warn("Failed to restore editor state:", error);

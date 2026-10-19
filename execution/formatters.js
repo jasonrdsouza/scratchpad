@@ -5,12 +5,20 @@
  * that work well in vim registers and console output.
  */
 
+import { OutputResult } from "./executor.js";
+
 /**
  * Format any result value into a display-friendly string
  * @param {any} result - Raw result from code execution
  * @returns {string} Formatted string representation
  */
 export function formatResult(result) {
+    if (result instanceof OutputResult) {
+        return result.value === undefined
+            ? result.output
+            : `${result.output}\n${formatResult(result.value)}`;
+    }
+
     if (result === undefined) {
         return "undefined";
     }

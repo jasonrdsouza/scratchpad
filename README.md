@@ -142,7 +142,9 @@ The scratchpad includes a powerful code execution system:
 - **Inline code**: Run `:js 1+2+3` directly for simple expressions
 - **Current line**: Run `:js` or `:eval` on any line with JavaScript
 - **Visual selection**: Select code, yank with `y`, then run `:js`
-- **Named registers**: Yank to register (`"ay`), execute with `:js a`
+- **Named registers**: Yank to register (`"ay`), execute with `:js a`. A single-letter argument is only treated as a register if that register has content; otherwise it's evaluated as code (so `:js 5` and `:js x` work)
+- **Global scope**: JavaScript runs via indirect `eval`, so `var`, function declarations and bare assignments persist between runs (`const`/`let` don't)
+- **Python output**: `print()` output is captured and shown with the result; top-level `await` works (e.g. `await micropip.install(...)`)
 
 #### Advanced Features
 
@@ -217,6 +219,7 @@ users.map(u => u.name.toUpperCase());
 - **Compartments enable dynamic changes** - Language switching without recreating the editor
 - **Graceful fallbacks matter** - Always handle state restoration failures
 - **Change detection saves performance** - Only write to localStorage when data actually changes
+- **Content is the source of truth** - Saved editor state is only restored if its document matches the saved content; otherwise it's stale (e.g. a failed save) and is discarded
 
 ### Architecture Insights
 

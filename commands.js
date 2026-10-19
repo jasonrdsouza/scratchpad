@@ -80,6 +80,25 @@ function getCodeFromRegister(registerName = null) {
 }
 
 /**
+ * Check whether an execution command argument names a register to run.
+ * Only letter registers (and ") count, and only when they hold text, so that
+ * inline code like `:js 5` or `:js x` is evaluated rather than looked up.
+ */
+function isRegisterArgument(arg) {
+    if (arg.length !== 1 || !REGISTERS.EXECUTABLE_PATTERN.test(arg)) {
+        return false;
+    }
+
+    const registerController = Vim.getVimGlobalState_().registerController;
+    const register =
+        arg === REGISTERS.UNNAMED
+            ? registerController.unnamedRegister
+            : registerController.registers[arg];
+    const text = register?.keyBuffer?.[0];
+    return Boolean(text && text.trim());
+}
+
+/**
  * Execute code using the execution engine and display results
  */
 async function executeCode(code, language = null) {
@@ -273,16 +292,12 @@ export function registerVimCommands(
     // Shared code execution command handler
     const handleExecutionCommand = async (cm, params, language = null) => {
         try {
-            if (params.args && params.args.length > 0) {
-                // Check if first arg looks like a register name (single character)
-                const firstArg = params.args[0];
-                if (
-                    firstArg.length === 1 &&
-                    REGISTERS.VALID_PATTERN.test(firstArg)
-                ) {
-                    // Treat as register name
+            // Use the raw argument string so inline code keeps its whitespace
+            const argString = (params.argString || "").trim();
+            if (argString) {
+                if (isRegisterArgument(argString)) {
                     const result = await executionEngine.executeFromRegister(
-                        firstArg,
+                        argString,
                         getCodeFromRegister,
                         language
                     );
@@ -297,9 +312,8 @@ export function registerVimCommands(
                         showExecutionResult(result.formattedResult, true);
                     }
                 } else {
-                    // Treat as inline code - join all args
-                    const code = params.args.join(" ");
-                    await executeCode(code, language);
+                    // Treat as inline code
+                    await executeCode(argString, language);
                 }
             } else {
                 // No args - get from unnamed register (yanked code)

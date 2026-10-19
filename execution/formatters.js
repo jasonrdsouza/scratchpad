@@ -92,6 +92,29 @@ function formatFunction(fn) {
 }
 
 /**
+ * Check for typed arrays (Int32Array, Float64Array, ...), excluding DataView
+ * @param {any} value - Value to check
+ * @returns {boolean} True if value is a typed array
+ */
+function isTypedArray(value) {
+    return ArrayBuffer.isView(value) && !(value instanceof DataView);
+}
+
+/**
+ * JSON.stringify replacer that serializes typed arrays as plain arrays and
+ * BigInts as numbers, neither of which JSON supports natively
+ */
+function jsonReplacer(key, value) {
+    if (typeof value === "bigint") {
+        return Number(value);
+    }
+    if (isTypedArray(value)) {
+        return Array.from(value);
+    }
+    return value;
+}
+
+/**
  * Format object values with pretty JSON
  * @param {Object} obj - Object to format
  * @returns {string} Formatted JSON representation
@@ -101,6 +124,10 @@ function formatObject(obj) {
         // Handle arrays specially for better readability
         if (Array.isArray(obj)) {
             return formatArray(obj);
+        }
+
+        if (isTypedArray(obj)) {
+            return formatArray(Array.from(obj));
         }
 
         // Handle dates
@@ -114,7 +141,7 @@ function formatObject(obj) {
         }
 
         // Handle regular objects with JSON
-        return JSON.stringify(obj, null, 2);
+        return JSON.stringify(obj, jsonReplacer, 2);
     } catch (error) {
         // Fallback for objects that can't be JSON stringified
         return `[Object ${obj.constructor?.name || "Object"}]`;
@@ -136,11 +163,11 @@ function formatArray(arr) {
         arr.length <= 5 &&
         arr.every((item) => typeof item !== "object" || item === null)
     ) {
-        return JSON.stringify(arr);
+        return JSON.stringify(arr, jsonReplacer);
     }
 
     // For longer or complex arrays, use pretty formatting
-    return JSON.stringify(arr, null, 2);
+    return JSON.stringify(arr, jsonReplacer, 2);
 }
 
 /**

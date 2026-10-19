@@ -54,7 +54,7 @@ function isRegisterArgument(arg) {
  * given (e.g. :'<,'>cmd or :10,20cmd), otherwise the selection or current line.
  * Vim passes range lines 0-based.
  */
-function getCommandRange(state, params) {
+export function getCommandRange(state, params) {
     if (params.line !== undefined) {
         const lastLine = state.doc.lines - 1;
         const start = Math.max(0, Math.min(params.line, lastLine));

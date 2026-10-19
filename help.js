@@ -14,6 +14,8 @@ const helpContent = {
             "Execute any valid Python expression or statement",
             "• Supports Python 3.13.2 via Pyodide WebAssembly runtime",
             "• Pre-loaded packages: numpy, pandas, requests",
+            "• Other Pyodide packages (e.g. scipy) load automatically on import",
+            "• numpy arrays are shown as plain lists",
             '• Results are automatically stored in "r register',
             "• print() output is shown along with the result",
             "• First execution may take a moment to load the Python runtime",

@@ -9,7 +9,7 @@
         "build": "vite build",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "test": "vitest run"
     },
     "keywords": [],
     "author": "",
@@ -39,6 +39,7 @@
     },
     "devDependencies": {
         "prettier": "^3.6.2",
-        "vite": "^7.0.5"
+        "vite": "^7.0.5",
+        "vitest": "^5.0.5"
     }
 }

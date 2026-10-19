@@ -245,6 +245,7 @@ export function getMainHelp(supportedLanguages) {
         "  :set nornu     - Enable absolute line numbers (alternative)",
         "",
         "Other Commands:",
+        "  :upgrade       - Reload to apply an available app update",
         "  :registers     - Show all vim registers",
         "  :registers r   - Show results register",
         "  :help <lang>   - Show help for specific language",

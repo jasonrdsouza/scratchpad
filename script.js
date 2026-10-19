@@ -1,3 +1,4 @@
+import "@fontsource/fira-code/400.css";
 import { EditorView, basicSetup } from "codemirror";
 import { Compartment } from "@codemirror/state";
 import { vim, Vim, getCM } from "@replit/codemirror-vim";
@@ -27,6 +28,7 @@ import {
 import { TIMING } from "./config.js";
 import { registerVimCommands } from "./commands.js";
 import { getTheme, applyThemeColors } from "./theme-manager.js";
+import { setupPWA } from "./pwa.js";
 
 const modeIndicator = document.getElementById("vim-mode-indicator");
 
@@ -161,3 +163,6 @@ registerVimCommands(
     wrapCompartment,
     lineNumberCompartment
 );
+
+// Enable offline support and app updates
+setupPWA(editorView);

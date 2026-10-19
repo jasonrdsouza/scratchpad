@@ -1,5 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Fira+Code&display=swap");
-
 /*
  * --editor-bg and --editor-fg are set from the active editor theme at runtime
  * (see applyThemeColors in theme-manager.js); these defaults match Nord.

@@ -120,7 +120,7 @@ function hideResult() {
 /**
  * Show execution results with styled popup
  */
-function showExecutionResult(result, isError = false) {
+export function showExecutionResult(result, isError = false) {
     if (!resultDisplay) {
         resultDisplay = document.createElement("div");
         resultDisplay.id = "js-result-display";

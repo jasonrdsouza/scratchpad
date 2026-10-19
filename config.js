@@ -137,5 +137,8 @@ export const SUCCESS_MESSAGES = {
     ABSOLUTE_NUMBERS_ENABLED: "Absolute line numbers enabled",
     WHITESPACE_VISIBLE: "Whitespace is now visible",
     WHITESPACE_HIDDEN: "Whitespace is now hidden",
-    FORMAT_SUCCESS: (format) => `Formatted as ${format.toUpperCase()}`
+    FORMAT_SUCCESS: (format) => `Formatted as ${format.toUpperCase()}`,
+    UPDATE_AVAILABLE: "A new version is available. Run :upgrade to reload.",
+    OFFLINE_READY: "Scratchpad is ready to work offline",
+    UP_TO_DATE: "Scratchpad is up to date"
 };

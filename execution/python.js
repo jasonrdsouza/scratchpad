@@ -5,42 +5,79 @@
  * Provides safe execution with proper error handling and result processing.
  */
 
-import { Executor } from "./executor.js";
-import { getResultsRegister } from "./registers.js";
+import { Executor, OutputResult } from "./executor.js";
+
+/**
+ * Python helper that turns numpy arrays and scalars into plain Python lists
+ * and numbers, which convert to JavaScript arrays and numbers rather than
+ * typed arrays (and work for dtypes like strings that have no typed array)
+ */
+const PREPARE_RESULT_PY = `
+def _scratchpad_prepare_result(value):
+    if type(value).__module__ == "numpy" and hasattr(value, "tolist"):
+        return value.tolist()
+    return value
+
+_scratchpad_prepare_result
+`;
+
+/**
+ * Convert a Python object proxy to a plain JavaScript value and release it.
+ * Dicts become plain objects (not Maps); objects with no JavaScript
+ * equivalent (e.g. a pandas DataFrame) fall back to their Python str().
+ * @param {Object} proxy - PyProxy returned by Pyodide
+ * @returns {any} JavaScript value
+ */
+function convertProxy(proxy) {
+    if (typeof proxy.toJs !== "function") {
+        return proxy;
+    }
+
+    try {
+        return proxy.toJs({
+            dict_converter: Object.fromEntries,
+            create_pyproxies: false
+        });
+    } catch (error) {
+        return proxy.toString();
+    } finally {
+        proxy.destroy();
+    }
+}
 
 /**
  * Python code executor using Pyodide WebAssembly runtime
  */
 export class PythonExecutor extends Executor {
-    constructor() {
+    /**
+     * @param {Object} options
+     * @param {string} options.indexURL - Where to load the Pyodide runtime from
+     *   (defaults to the CDN, matching the installed package version)
+     * @param {string[]} options.preloadPackages - Packages to load up front
+     */
+    constructor({
+        indexURL = null,
+        preloadPackages = ["numpy", "pandas", "requests"]
+    } = {}) {
         super("Python");
-        this.pyodide = null;
-        this.isLoading = false;
+        this.indexURL = indexURL;
+        this.preloadPackages = preloadPackages;
         this.loadPromise = null;
     }
 
     /**
-     * Initialize Pyodide runtime (lazy loading)
+     * Initialize Pyodide runtime (lazy loading, shared across calls)
      * @returns {Promise<Object>} Pyodide instance
      */
-    async initializePyodide() {
-        if (this.pyodide) {
-            return this.pyodide;
+    initializePyodide() {
+        if (!this.loadPromise) {
+            this.loadPromise = this._loadPyodide().catch((error) => {
+                // Allow a retry on the next execution
+                this.loadPromise = null;
+                throw error;
+            });
         }
-
-        if (this.isLoading) {
-            return await this.loadPromise;
-        }
-
-        this.isLoading = true;
-        this.loadPromise = this._loadPyodide();
-
-        try {
-            this.pyodide = await this.loadPromise;
-            return this.pyodide;
-        } finally {
-            this.isLoading = false;
-        }
+        return this.loadPromise;
     }
 
     /**
@@ -52,16 +89,23 @@ export class PythonExecutor extends Executor {
             console.log("Loading Pyodide runtime...");
 
             // Import loadPyodide from npm package
-            const { loadPyodide } = await import("pyodide");
+            const { loadPyodide, version } = await import("pyodide");
 
-            // Initialize Pyodide with CDN files to avoid SRI integrity issues
+            // Load the runtime files from the CDN, matching the installed
+            // package version (loadPyodide rejects mismatched versions).
+            // The service worker caches them for offline use.
             const pyodide = await loadPyodide({
-                indexURL: "https://cdn.jsdelivr.net/pyodide/v0.28.0/full/"
+                indexURL:
+                    this.indexURL ??
+                    `https://cdn.jsdelivr.net/pyodide/v${version}/full/`
             });
 
-            // Pre-load common Python packages
-            console.log("Loading Python packages: numpy, pandas, requests...");
-            await pyodide.loadPackage(["numpy", "pandas", "requests"]);
+            // Pre-load common Python packages (so they're cached for offline use)
+            if (this.preloadPackages.length > 0) {
+                await pyodide.loadPackage(this.preloadPackages);
+            }
+
+            this.prepareResult = pyodide.runPython(PREPARE_RESULT_PY);
 
             console.log("Pyodide loaded successfully with packages!");
             return pyodide;
@@ -88,42 +132,36 @@ export class PythonExecutor extends Executor {
             // Ensure Pyodide is loaded
             const pyodide = await this.initializePyodide();
 
-            // Execute the Python code
-            const result = pyodide.runPython(code);
+            // Load any other Pyodide-bundled packages the code imports
+            // (logging progress to the console rather than the result)
+            await pyodide.loadPackagesFromImports(code, {
+                messageCallback: (message) => console.log(message),
+                errorCallback: (message) => console.warn(message)
+            });
 
-            // Convert Python objects to JavaScript objects when possible
+            // Capture print() output so it can be shown with the result
+            const output = [];
+            const capture = { batched: (line) => output.push(line) };
+            pyodide.setStdout(capture);
+            pyodide.setStderr(capture);
+
+            // Execute the Python code (async so top-level await works)
+            let result = await pyodide.runPythonAsync(code);
+
             if (result && typeof result.toJs === "function") {
-                return result.toJs();
+                // The helper returns a new proxy or a plain JavaScript value
+                const prepared = this.prepareResult(result);
+                result.destroy();
+                result = convertProxy(prepared);
+            }
+
+            if (output.length > 0) {
+                return new OutputResult(output.join("\n"), result);
             }
 
             return result;
         } catch (error) {
-            // Handle Pyodide-specific errors
-            if (error.name === "PythonError") {
-                throw new Error(`Python execution failed: ${error.message}`);
-            }
-
-            // Re-throw with more context
             throw new Error(`Python execution failed: ${error.message}`);
         }
     }
-
-    /**
-     * Get display name for this executor
-     * @returns {string} Display name
-     */
-    getDisplayName() {
-        return "Python";
-    }
-
-    /**
-     * Check if Pyodide is loaded and ready
-     * @returns {boolean} True if ready to execute
-     */
-    isReady() {
-        return this.pyodide !== null && !this.isLoading;
-    }
 }
-
-// Export convenience instance
-export const pythonExecutor = new PythonExecutor();

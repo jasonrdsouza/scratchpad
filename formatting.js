@@ -18,9 +18,7 @@ export function formatJSON(jsonText) {
     jsonText = jsonText.trim();
 
     if (!jsonText) {
-        throw new Error(
-            ERROR_MESSAGES.NO_TEXT_TO_FORMAT || "No text to format"
-        );
+        throw new Error(ERROR_MESSAGES.NO_TEXT_TO_FORMAT);
     }
 
     try {
@@ -97,16 +95,12 @@ export function formatClean(text) {
  */
 export function formatTable(text) {
     if (!text || !text.trim()) {
-        throw new Error(
-            ERROR_MESSAGES.NO_TEXT_TO_FORMAT || "No text to format as table"
-        );
+        throw new Error(ERROR_MESSAGES.NO_TEXT_TO_FORMAT);
     }
 
     const lines = text.trim().split(/\r?\n/);
     if (lines.length === 0) {
-        throw new Error(
-            ERROR_MESSAGES.NO_DATA_TO_FORMAT || "No data to format as table"
-        );
+        throw new Error(ERROR_MESSAGES.NO_DATA_TO_FORMAT);
     }
 
     // Auto-detect delimiter

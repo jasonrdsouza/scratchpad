@@ -1,4 +1,32 @@
-@import url("https://fonts.googleapis.com/css2?family=Fira+Code&display=swap");
+/*
+ * --editor-bg and --editor-fg are set from the active editor theme at runtime
+ * (see applyThemeColors in theme-manager.js); these defaults match Nord.
+ * Accent colors switch to darker variants for light themes.
+ */
+:root {
+    --editor-bg: #2e3440;
+    --editor-fg: #d8dee9;
+    --surface: color-mix(in srgb, var(--editor-fg) 10%, var(--editor-bg));
+    --border: color-mix(in srgb, var(--editor-fg) 25%, var(--editor-bg));
+
+    --accent-normal: #81a1c1; /* nord9 */
+    --accent-insert: #a3be8c; /* nord14 */
+    --accent-visual: #b48ead; /* nord15 */
+    --accent-replace: #d08770; /* nord12 */
+    --accent-success: #a3be8c; /* nord14 */
+    --accent-error: #bf616a; /* nord11 */
+    --on-accent: #2e3440; /* nord0 */
+}
+
+:root[data-theme-type="light"] {
+    --accent-normal: #3b6ea5;
+    --accent-insert: #3f7f3f;
+    --accent-visual: #8a4f9e;
+    --accent-replace: #b5562b;
+    --accent-success: #3f7f3f;
+    --accent-error: #b03a48;
+    --on-accent: #ffffff;
+}
 
 body,
 html {
@@ -7,6 +35,7 @@ html {
     height: 100%;
     overflow: hidden;
     font-family: "Fira Code", monospace;
+    background-color: var(--editor-bg);
 }
 
 #editor {
@@ -18,16 +47,30 @@ html {
     font-size: 1.1rem;
 }
 
+/*
+ * Nord's selection matches its active line highlight, so a single-line visual
+ * selection would be invisible; use a distinct (but readable) color instead
+ */
+:root[data-theme="nord"] .cm-selectionBackground {
+    background-color: color-mix(
+        in srgb,
+        #88c0d0 30%,
+        var(--editor-bg)
+    ) !important; /* nord8 */
+}
+
+/* Vim command line: use the editor's text color and font */
+.cm-vim-panel,
 .cm-vim-panel input {
-    color: #d8dee9; /* nord4 */
-    border: none;
-    outline: none;
+    font-family: "Fira Code", monospace;
     font-size: 1.1rem;
 }
 
-/* Visual mode selection highlight */
-.cm-selectionBackground {
-    background-color: #8fbcbb !important; /* pastel cyan */
+.cm-vim-panel input {
+    color: var(--editor-fg);
+    background: transparent;
+    border: none;
+    outline: none;
 }
 
 #vim-mode-indicator {
@@ -37,23 +80,24 @@ html {
     padding: 5px 15px;
     border-radius: 5px;
     font-size: 1.1rem;
-    color: #eceff4; /* nord6 */
+    color: var(--on-accent);
+    background-color: var(--accent-normal);
     transition:
         background-color 0.3s,
         color 0.3s;
     z-index: 100;
 }
 
-#vim-mode-indicator.normal {
-    background-color: #81a1c1; /* nord9 */
-}
-
 #vim-mode-indicator.insert {
-    background-color: #a3be8c; /* nord14 */
+    background-color: var(--accent-insert);
 }
 
 #vim-mode-indicator.visual {
-    background-color: #b48ead; /* nord15 */
+    background-color: var(--accent-visual);
+}
+
+#vim-mode-indicator.replace {
+    background-color: var(--accent-replace);
 }
 
 #js-result-display {
@@ -62,7 +106,7 @@ html {
     right: 20px;
     max-width: 300px;
     max-height: 200px;
-    padding: 10px;
+    padding: 10px 12px;
     border-radius: 5px;
     font-family: "Fira Code", monospace;
     font-size: 0.9rem;
@@ -71,18 +115,15 @@ html {
     z-index: 101;
     opacity: 0;
     transition: opacity 0.3s;
-}
-
-#js-result-display.success {
-    background-color: #a3be8c; /* nord14 green */
-    color: #2e3440; /* nord0 */
-    border: 2px solid #8fbcbb; /* nord7 */
+    color: var(--editor-fg);
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent-success);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
 }
 
 #js-result-display.error {
-    background-color: #bf616a; /* nord11 red */
-    color: #eceff4; /* nord6 */
-    border: 2px solid #d08770; /* nord12 */
+    border-left-color: var(--accent-error);
 }
 
 #js-result-display.show {

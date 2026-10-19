@@ -105,26 +105,29 @@ export function switchTheme(editorView, themeName, themeCompartment) {
     editorView.dispatch({
         effects: themeCompartment.reconfigure(newTheme)
     });
+    applyThemeColors(editorView, themeName);
 
     console.log(`Switched to theme: ${themeName}`);
     return themeName;
 }
 
 /**
- * Get theme information for display
+ * Apply the editor theme's colors to the surrounding UI (result popup, mode
+ * indicator, page background and browser title bar) via CSS variables
  */
-export function getThemeInfo(themeName) {
-    if (!isValidTheme(themeName)) {
-        return null;
-    }
+export function applyThemeColors(editorView, themeName = getCurrentTheme()) {
+    const background = getComputedStyle(editorView.dom).backgroundColor;
+    const foreground = getComputedStyle(editorView.contentDOM).color;
 
-    // Use centralized theme categorization
-    const lightThemes = THEMES.LIGHT;
-    const darkThemes = THEMES.DARK;
+    const root = document.documentElement;
+    root.style.setProperty("--editor-bg", background);
+    root.style.setProperty("--editor-fg", foreground);
+    root.dataset.theme = themeName;
+    root.dataset.themeType = THEMES.LIGHT.includes(themeName)
+        ? "light"
+        : "dark";
 
-    return {
-        name: themeName,
-        type: THEMES.LIGHT.includes(themeName) ? "light" : "dark",
-        family: themeName.split("-")[0] // e.g., "solarized", "github", etc.
-    };
+    document
+        .querySelector('meta[name="theme-color"]')
+        ?.setAttribute("content", background);
 }

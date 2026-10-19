@@ -6,11 +6,25 @@ import { STORAGE_KEYS, TIMING, DEFAULTS } from "./config.js";
 // State fields for serialization (including history)
 export const stateFields = { history: historyField };
 
+// Document content as of this tab's last load or save. Used to tell whether
+// this tab has unsaved edits, so an idle tab never overwrites newer content
+// saved by another tab.
+let lastSavedContent = null;
+
 /**
  * Save editor state (including undo/redo history) only if changed
  */
 export function saveEditorState(editorView) {
     try {
+        // Only save state that matches the saved content; otherwise this tab
+        // is out of date and its state would be stale
+        if (
+            editorView.state.doc.toString() !==
+            localStorage.getItem(STORAGE_KEYS.CONTENT)
+        ) {
+            return;
+        }
+
         const currentStateJson = JSON.stringify(
             editorView.state.toJSON(stateFields)
         );
@@ -72,12 +86,17 @@ export function saveVimHistoryIfChanged() {
  * Save content only if changed
  */
 export function saveContentIfChanged(editorView) {
-    const currentContent = editorView.state.doc.toString();
-    const storedContent = localStorage.getItem(STORAGE_KEYS.CONTENT);
+    try {
+        const currentContent = editorView.state.doc.toString();
 
-    if (currentContent !== storedContent) {
-        localStorage.setItem(STORAGE_KEYS.CONTENT, currentContent);
-        console.log("Auto-saved content.");
+        // Only save edits made in this tab since its last load or save
+        if (currentContent !== lastSavedContent) {
+            localStorage.setItem(STORAGE_KEYS.CONTENT, currentContent);
+            lastSavedContent = currentContent;
+            console.log("Auto-saved content.");
+        }
+    } catch (error) {
+        console.error("Failed to save content:", error);
     }
 }
 
@@ -87,7 +106,10 @@ export function saveContentIfChanged(editorView) {
 export function saveContent(editorView) {
     const content = editorView.state.doc.toString();
     localStorage.setItem(STORAGE_KEYS.CONTENT, content);
+    lastSavedContent = content;
     console.log("Content saved.");
+    // Keep the editor state in sync so it isn't discarded as stale on reload
+    saveEditorState(editorView);
 }
 
 /**
@@ -181,6 +203,21 @@ export function restoreEditorState(extensions) {
             { extensions },
             stateFields
         );
+
+        // Content is the source of truth. If the editor state didn't get saved
+        // along with it (e.g. it hit the storage quota), it's stale - discard it
+        // rather than restoring an outdated document.
+        const savedContent = localStorage.getItem(STORAGE_KEYS.CONTENT);
+        if (
+            savedContent !== null &&
+            savedContent !== restoredState.doc.toString()
+        ) {
+            console.warn(
+                "Saved editor state is out of date with saved content; ignoring it."
+            );
+            return null;
+        }
+
         return restoredState;
     } catch (error) {
         console.warn("Failed to restore editor state:", error);
@@ -189,22 +226,91 @@ export function restoreEditorState(extensions) {
 }
 
 /**
+ * Replace the editor's document with content saved by another tab, changing
+ * only the part that differs so the cursor stays in place where possible
+ */
+function applyExternalContent(editorView, newContent) {
+    const current = editorView.state.doc.toString();
+
+    let start = 0;
+    while (
+        start < current.length &&
+        start < newContent.length &&
+        current[start] === newContent[start]
+    ) {
+        start++;
+    }
+
+    let currentEnd = current.length;
+    let newEnd = newContent.length;
+    while (
+        currentEnd > start &&
+        newEnd > start &&
+        current[currentEnd - 1] === newContent[newEnd - 1]
+    ) {
+        currentEnd--;
+        newEnd--;
+    }
+
+    editorView.dispatch({
+        changes: {
+            from: start,
+            to: currentEnd,
+            insert: newContent.slice(start, newEnd)
+        }
+    });
+}
+
+/**
  * Setup autosave functionality for an editor view
  */
 export function setupAutosave(editorView) {
+    lastSavedContent = editorView.state.doc.toString();
+
     // Set up autosave (content + vim history) at regular intervals
     const intervalId = setInterval(
         () => autoSave(editorView),
         TIMING.AUTOSAVE_INTERVAL_MS
     );
 
-    // Save on page unload
-    const beforeUnloadHandler = () => autoSave(editorView);
-    window.addEventListener("beforeunload", beforeUnloadHandler);
+    // Save when the page is hidden or closed. visibilitychange/pagehide are
+    // more reliable than beforeunload, especially on mobile.
+    const saveHandler = () => autoSave(editorView);
+    const visibilityHandler = () => {
+        if (document.visibilityState === "hidden") {
+            autoSave(editorView);
+        }
+    };
+    window.addEventListener("beforeunload", saveHandler);
+    window.addEventListener("pagehide", saveHandler);
+    document.addEventListener("visibilitychange", visibilityHandler);
+
+    // Pick up content saved by another tab, unless this tab has unsaved
+    // edits of its own (in which case the most recent save wins)
+    const storageHandler = (event) => {
+        if (event.key !== STORAGE_KEYS.CONTENT || event.newValue === null) {
+            return;
+        }
+
+        if (editorView.state.doc.toString() !== lastSavedContent) {
+            console.warn(
+                "Content changed in another tab, but this tab has unsaved edits; keeping them."
+            );
+            return;
+        }
+
+        applyExternalContent(editorView, event.newValue);
+        lastSavedContent = event.newValue;
+        console.log("Loaded content saved in another tab.");
+    };
+    window.addEventListener("storage", storageHandler);
 
     // Return cleanup function
     return () => {
         clearInterval(intervalId);
-        window.removeEventListener("beforeunload", beforeUnloadHandler);
+        window.removeEventListener("beforeunload", saveHandler);
+        window.removeEventListener("pagehide", saveHandler);
+        document.removeEventListener("visibilitychange", visibilityHandler);
+        window.removeEventListener("storage", storageHandler);
     };
 }

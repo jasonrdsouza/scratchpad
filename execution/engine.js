@@ -7,7 +7,6 @@
 
 import { formatResult } from "./formatters.js";
 import { storeResult } from "./registers.js";
-import { Executor } from "./executor.js";
 import { JavaScriptExecutor } from "./javascript.js";
 import { PythonExecutor } from "./python.js";
 import { DEFAULTS, ERROR_MESSAGES } from "../config.js";
@@ -18,13 +17,12 @@ import { DEFAULTS, ERROR_MESSAGES } from "../config.js";
 export class ExecutionEngine {
     constructor() {
         this.executors = new Map();
+        this.languages = [];
         this.defaultLanguage = null;
 
         // Register built-in executors
-        this.registerExecutor("javascript", new JavaScriptExecutor());
-        this.registerExecutor("js", new JavaScriptExecutor()); // Alias
-        this.registerExecutor("python", new PythonExecutor());
-        this.registerExecutor("py", new PythonExecutor()); // Alias
+        this.registerExecutor("javascript", new JavaScriptExecutor(), ["js"]);
+        this.registerExecutor("python", new PythonExecutor(), ["py"]);
         this.setDefaultLanguage(DEFAULTS.EXECUTION_LANGUAGE);
     }
 
@@ -32,9 +30,13 @@ export class ExecutionEngine {
      * Register a new language executor
      * @param {string} language - Language identifier
      * @param {Executor} executor - Executor instance
+     * @param {string[]} aliases - Alternative identifiers for the same executor
      */
-    registerExecutor(language, executor) {
-        this.executors.set(language.toLowerCase(), executor);
+    registerExecutor(language, executor, aliases = []) {
+        this.languages.push(language.toLowerCase());
+        for (const name of [language, ...aliases]) {
+            this.executors.set(name.toLowerCase(), executor);
+        }
     }
 
     /**
@@ -50,11 +52,11 @@ export class ExecutionEngine {
     }
 
     /**
-     * Get list of supported languages
+     * Get list of supported languages (excluding aliases)
      * @returns {string[]} Array of language names
      */
     getSupportedLanguages() {
-        return Array.from(this.executors.keys());
+        return [...this.languages];
     }
 
     /**
@@ -84,7 +86,7 @@ export class ExecutionEngine {
             const formattedResult = formatResult(rawResult);
 
             // Store result in register
-            await storeResult(formattedResult);
+            storeResult(formattedResult);
 
             // Return structured result
             return {
@@ -105,42 +107,7 @@ export class ExecutionEngine {
             };
         }
     }
-
-    /**
-     * Execute code from a vim register
-     * @param {string} registerName - Register name, null for unnamed
-     * @param {Function} getCodeFromRegister - Function to retrieve register content
-     * @param {string} language - Optional language override
-     * @returns {Promise<Object>} Execution result
-     */
-    async executeFromRegister(
-        registerName,
-        getCodeFromRegister,
-        language = null
-    ) {
-        try {
-            const code = getCodeFromRegister(registerName);
-            if (!code || !code.trim()) {
-                throw new Error(
-                    registerName
-                        ? ERROR_MESSAGES.REGISTER_NOT_FOUND(registerName)
-                        : ERROR_MESSAGES.NO_CODE_FOUND
-                );
-            }
-            return await this.execute(code.trim(), language);
-        } catch (error) {
-            return {
-                success: false,
-                error: error.message,
-                language: language || this.defaultLanguage,
-                formattedResult: error.message
-            };
-        }
-    }
 }
 
 // Create and export default engine instance
 export const executionEngine = new ExecutionEngine();
-
-// Re-export Executor for convenience
-export { Executor } from "./executor.js";

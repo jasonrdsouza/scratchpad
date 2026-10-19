@@ -30,3 +30,18 @@ export class Executor {
         return this.language;
     }
 }
+
+/**
+ * Result wrapper for executors that capture printed output (e.g. Python's
+ * print) alongside the value of the last expression
+ */
+export class OutputResult {
+    /**
+     * @param {string} output - Captured printed output
+     * @param {any} value - Value of the last expression, if any
+     */
+    constructor(output, value) {
+        this.output = output;
+        this.value = value;
+    }
+}

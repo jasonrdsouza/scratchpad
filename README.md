@@ -2,302 +2,65 @@
 
 A browser based, web first, vim backed, AI assisted scratchpad for quick notes, brainstorming, and brain dumping.
 
-## Project Overview
+**Live at [scratch.dsouza.io](https://scratch.dsouza.io)**
 
-### Core Features
+## Features
 
-- **Vim editing** with all standard modes (normal, insert, visual)
-- **Syntax highlighting** for multiple programming languages
-- **Theme switching** - 13+ themes via `:colorscheme`, `:colo`, or `:theme` commands
-- **Persistent storage** of content, vim command history, undo/redo history, and theme preferences
-- **Autosave** functionality to prevent data loss (only saves changed data)
-- **Clean, minimal interface** with vim mode indicator
-- **JavaScript execution** - Execute code from vim registers with `:js` and `:eval`, results stored in `"r` register
-- **Register management** - Store and execute code snippets using vim's register system
+- **Vim editing** - normal, insert, visual (`v`, `V`, and `Ctrl+Q` for block, since `Ctrl+V` is the browser's paste) and replace modes, with registers, search and ex commands
+- **Everything persists** - content, undo/redo history, vim command and search history, and settings are saved in your browser automatically
+- **Works offline** - install it as an app; once loaded it works without a connection, including Python after its first use
+- **Multi-tab safe** - tabs pick up content saved in other tabs instead of overwriting it
+- **Run code** - JavaScript and Python (via Pyodide, with numpy, pandas and requests) from the current line, a selection, a register or inline
+- **Formatting** - pretty-print JSON, clean up whitespace, and turn CSV/TSV into aligned tables
+- **Syntax highlighting** for markdown, JavaScript/TypeScript, Python, Go, JSON, YAML, HTML, CSS, SQL and XML
+- **14 themes**, light and dark
 
-## Development Preferences
+## Installing
 
-### Package Management
+Open [scratch.dsouza.io](https://scratch.dsouza.io) and use your browser's install option (e.g. the install icon in Chrome's address bar). The app updates itself in the background; when a new version is ready you'll see a prompt to run `:upgrade`.
 
-- **Always use `pnpm`** instead of npm or yarn
-- Run `pnpm run format` after making code changes to maintain consistent formatting
-- Use `pnpm run format:check` to verify formatting
+## Commands
 
-### Code Quality
+Run `:help` in the editor for the full list, or `:help <topic>` (`js`, `py`, `fmt`, `theme`, `whitespace`, `relativenumber`).
 
-- **Run prettier after code changes** - This project uses prettier for consistent formatting
-- Prefer **4-space indentation**, double quotes, semicolons
-- Keep code clean and readable
+| Command                                         | What it does                                            |
+| ----------------------------------------------- | ------------------------------------------------------- |
+| `:w`, `:q`, `:wq`                               | Save, close the window, both                            |
+| `:set ft=<lang>`                                | Syntax highlighting (`md`, `js`, `ts`, `py`, `go`, ...) |
+| `:set wrap` / `:set nowrap`                     | Soft line wrapping                                      |
+| `:set rnu` / `:set nornu`                       | Relative / absolute line numbers                        |
+| `:colo <theme>`, `:theme <theme>`               | Switch theme (no argument lists themes)                 |
+| `:whitespace`                                   | Toggle visible whitespace                               |
+| `:fmt`, `:fmt json`, `:fmt clean`, `:fmt table` | Format the current line, selection or range             |
+| `:js`, `:py`                                    | Run code (see below)                                    |
+| `:registers`, `:registers r`                    | Show registers                                          |
+| `:upgrade`                                      | Reload to apply an app update                           |
 
-### Architecture Decisions
+## Running Code
 
-#### Language & Framework Choices
+`:js` (or `:eval`) runs JavaScript and `:py` (or `:python`) runs Python:
 
-- **Vanilla JavaScript** - No heavy frameworks, keep it lightweight
-- **CodeMirror 6** - Modern, performant editor with good vim support
-- **@replit/codemirror-vim** - Best vim implementation for CM6
+- `:js` - run the current line
+- Select lines with `V`, then type `:js` (it becomes `:'<,'>js`) to run the selection; or give a range like `:10,20py`
+- `:js Math.PI * 2` - run inline code
+- `:js a` - run register `a` (yank into it with `"ay`); `:js "` runs the last yank
+- Results appear in a popup and are stored in the `"r` register, so `"rp` pastes the last result
 
-#### Dependency Strategy
+JavaScript runs in the page's global scope, so `var` and function declarations carry over between runs. Python supports top-level `await`, shows `print()` output alongside the result, and loads other Pyodide packages (e.g. `scipy`) automatically when imported. The first Python run downloads the runtime, which takes a few seconds.
 
-- **Prefer official CodeMirror 6 packages** over third-party or legacy alternatives
-- **Avoid legacy modes** - Only use native CM6 language support
-- **Leverage existing library functionality** instead of reinventing features
-- **Stay up-to-date** with CodeMirror ecosystem
-
-#### Current Language Support
-
-Official CM6 packages only (with shorthand aliases):
-
-- **JavaScript/TypeScript** (`js`, `ts`, `jsx`, `tsx`) - Full language support with variants
-- **Web languages** (`json`, `css`, `html`) - Frontend development
-- **Data formats** (`yaml`/`yml`, `xml`, `sql`) - Configuration and data
-- **Programming languages** (`go`, `python`/`py`) - Backend development
-- **Documentation** (`markdown`/`md`) - Notes and documentation
-
-#### Storage Strategy
-
-- **localStorage for everything** - content, vim history, editor state
-- **Optimized autosave** - Only saves data when it has actually changed (every 5 seconds)
-- **State serialization** - Use CM6's built-in `toJSON`/`fromJSON` for editor state persistence
-- **Modular state management** - All persistence logic isolated in `state-manager.js`
-
-#### UI/UX Principles
-
-- **Minimal interface** - Focus on the editor
-- **Vim-first experience** - All interactions should feel natural to vim users
-- **Nord theme** - Consistent dark theme throughout
-- **Visual feedback** - Mode indicator, proper syntax highlighting
-
-## Technical Implementation Notes
-
-### Key Files
-
-- `script.js` - Editor setup, configuration, language definitions, UI initialization
-- `state-manager.js` - All persistence and state management functionality
-- `commands.js` - Vim command implementations and execution coordination
-- `theme-manager.js` - Theme management with 13+ CodeMirror themes and persistence
-- `execution/` - **Modular execution engine for multi-language support**
-    - `engine.js` - Central execution coordinator with pluggable language support
-    - `executor.js` - Abstract base class for language executors
-    - `javascript.js` - JavaScript execution implementation
-    - `formatters.js` - Result formatting utilities for all data types
-    - `registers.js` - Register management and result storage
-- `style.css` - UI styling with Nord color scheme (including result popups)
-- `index.html` - Minimal HTML structure
-- `.prettierrc` - Code formatting configuration
-
-### Persistence Strategy
-
-The app persists:
-
-1. **Document content** (`vim-scratchpad-content`)
-2. **File type** (`vim-scratchpad-filetype`)
-3. **Theme preference** (`vim-scratchpad-theme`)
-4. **Vim command history** (`vim-command-history`)
-5. **Vim search history** (`vim-search-history`)
-6. **Complete editor state** (`editor-state`) including undo/redo history
-
-### Vim Integration
-
-- Use `getCM(editorView)` to access vim functionality
-- Listen to `vim-mode-change` events for mode indicator
-- Define custom vim commands with `Vim.defineEx()`
-- Access vim history via `Vim.getVimGlobalState_()`
-- Access vim registers via `registerController.unnamedRegister.keyBuffer[0]`
-
-### CodeMirror 6 Patterns
-
-- Use `Compartment` for dynamic language and theme switching
-- Serialize state with `stateFields = { history: historyField }`
-- Handle state restoration gracefully with try/catch fallbacks
-
-### Theme Switching
-
-The scratchpad includes comprehensive theme support with 13+ professionally designed themes:
-
-#### Available Themes
-
-- **Light themes**: `solarized-light`, `github-light`, `material-light`, `gruvbox-light`, `tokyo-night-day`, `basic-light`
-- **Dark themes**: `nord` (default), `solarized-dark`, `github-dark`, `material-dark`, `gruvbox-dark`, `tokyo-night`, `tokyo-night-storm`, `basic-dark`
-
-#### Theme Commands
-
-- **Standard vim**: `:colorscheme <theme>` (e.g., `:colorscheme solarized-light`)
-- **Short form**: `:colo <theme>` (e.g., `:colo github-dark`)
-- **Alternative**: `:theme <theme>` (e.g., `:theme gruvbox-light`)
-- **List themes**: Any command without arguments shows current theme and available options
-
-#### Theme Persistence
-
-- Theme preferences are automatically saved to localStorage
-- Themes are restored on page load
-- Uses CodeMirror compartments for instant switching without losing editor state
-
-### JavaScript Code Execution
-
-The scratchpad includes a powerful code execution system:
-
-#### Basic Usage
-
-- **Inline code**: Run `:js 1+2+3` directly for simple expressions
-- **Current line**: Run `:js` or `:eval` on any line with JavaScript
-- **Visual selection**: Select code, yank with `y`, then run `:js`
-- **Named registers**: Yank to register (`"ay`), execute with `:js a`
-
-#### Advanced Features
-
-- **Result storage**: All execution results automatically stored in `"r` register
-- **Result pasting**: Use `"rp` to paste the last result into your buffer
-- **Register inspection**: Use `:registers` to view all register contents
-- **Error handling**: Syntax errors and runtime errors are displayed safely
-- **Result display**: Results appear in a styled popup with Nord theme colors
-- **Multiple result types**: Handles objects (JSON), functions, primitives, undefined/null
-
-#### Workflow Examples
-
-```javascript
-// Inline execution - results stored in "r register
-:js Math.PI * 2
-
-// Multi-line - select, yank, :js
-const x = 5;
-const y = 10;
-x + y
-
-// Named registers - select, "ay, then :js a
-const users = [{name: "Alice"}, {name: "Bob"}];
-users.map(u => u.name.toUpperCase());
-
-// View and paste previous results
-:registers r  // view last result
-"rp          // paste result into buffer
+```
+// Multi-line: select the two lines below with V, then :'<,'>js
+const users = [{ name: "Alice" }, { name: "Bob" }];
+users.map((u) => u.name.toUpperCase());
 ```
 
-## Development Workflow
+## Development
 
-1. **Making changes**: Edit source files normally
-2. **Formatting**: Run `pnpm run format` after changes
-3. **Testing**: Use `pnpm run dev` to start development server
-4. **Language changes**: Use `:set ft=<language>` in the editor
+```sh
+pnpm install
+pnpm run dev      # development server
+pnpm test         # tests
+pnpm run build    # production build in dist/
+```
 
-## Feature Implementation Philosophy
-
-### When adding new features:
-
-1. **Check if CodeMirror 6 has it built-in** first
-2. **Leverage existing vim patterns** from @replit/codemirror-vim
-3. **Maintain backward compatibility** with existing localStorage data
-4. **Keep the interface minimal** - avoid UI bloat
-5. **Test persistence** - Ensure features work across page refreshes
-6. **Optimize for vim users** - Use vim's register system rather than custom selection handling
-7. **Use the execution engine** - For new language support, implement the Executor interface
-8. **Follow modular architecture** - Separate concerns into focused files
-
-### Avoid:
-
-- Heavy external dependencies
-- Custom reinvention of editor functionality
-- Breaking changes to existing storage format
-- UI complexity that distracts from editing
-- Complex visual selection capture - use vim's register system instead
-- Adding execution logic directly to commands.js - use the execution engine
-
-## Key Technical Learnings
-
-### Vim Integration Patterns
-
-- **Mode transitions clear selections** - When entering command mode (`:`) from visual, selections are lost
-- **Register system is more reliable** - Use `"ay` to yank, then access `keyBuffer[0]` rather than trying to capture selections
-- **Vim global state access** - `Vim.getVimGlobalState_().registerController` provides register access
-- **Mode change events work well** - `vim-mode-change` events are reliable for UI updates
-
-### CodeMirror 6 State Management
-
-- **State serialization is powerful** - `toJSON()`/`fromJSON()` handles complex undo/redo history
-- **Compartments enable dynamic changes** - Language switching without recreating the editor
-- **Graceful fallbacks matter** - Always handle state restoration failures
-- **Change detection saves performance** - Only write to localStorage when data actually changes
-
-### Architecture Insights
-
-- **Separate state management early** - Isolating persistence logic prevents coupling
-- **Prefer existing library patterns** - Don't reinvent vim behaviors, use the library's systems
-- **Optimize for the 90% case** - Single-line execution is most common, multi-line via registers
-- **Vim users expect vim patterns** - Yanking to registers feels natural vs. custom selection handling
-- **Modular command system** - Isolating vim commands makes the codebase more maintainable
-- **CSS over inline styles** - Keep styling in CSS files for better organization and maintenance
-- **Execution engine pattern** - Abstract interfaces enable easy language addition without coupling
-
-### Execution Engine Design
-
-- **Abstract Executor interface** - All languages implement the same contract
-- **Pluggable architecture** - Register new languages with a single line
-- **Consistent formatting** - Unified result formatting across all languages
-- **Proper error handling** - Language-specific errors handled uniformly
-- **Register integration** - Results automatically stored using vim's register API
-- **Future-proof** - Adding Python, SQL, or other languages requires minimal changes
-
-## Current Architecture
-
-The project follows a modular architecture with clear separation of concerns:
-
-### **Module Responsibilities:**
-
-- **`script.js`** - Core editor setup
-    - Editor initialization and configuration
-    - Language definitions and mapping
-    - Mode indicator and UI event handling
-    - Theme and language compartment management
-
-- **`state-manager.js`** - Complete persistence layer
-    - All localStorage operations with change detection
-    - Editor state serialization/deserialization
-    - Vim history management
-    - Autosave coordination and initialization helpers
-
-- **`commands.js`** - Vim command coordination
-    - All vim command implementations (`:w`, `:q`, `:set`, `:colorscheme`, `:theme`)
-    - Execution command handlers (`:js`, `:eval`)
-    - Register inspection (`:registers`)
-    - Result display system
-
-- **`theme-manager.js`** - Theme management system
-    - 13+ professional CodeMirror themes with categorization
-    - Theme persistence and localStorage integration
-    - Dynamic theme switching via compartments
-    - Theme validation and information utilities
-
-- **`execution/`** - **Modular execution engine**
-    - **`engine.js`** - Central coordinator for multi-language execution
-    - **`executor.js`** - Abstract interface for language implementations
-    - **`javascript.js`** - JavaScript execution with eval() and async support
-    - **`formatters.js`** - Consistent result formatting across languages
-    - **`registers.js`** - Result storage using proper vim register API
-
-## Documentation Policy
-
-**IMPORTANT**: This README must be updated after any:
-
-- **Architectural changes** - New files, moved functions, refactored modules
-- **New features** - Commands, language support, UI changes
-- **Development workflow changes** - Build process, formatting, dependencies
-- **Key learnings** - Technical insights, debugging discoveries, implementation patterns
-
-**CRITICAL**: When adding new vim commands or functionality:
-
-1. **Update the `:help` command** - Add new commands to the help text in `commands.js`
-2. **Update this README** - Document the new feature in the appropriate section
-3. **Test the help system** - Ensure `:help` displays the new functionality correctly
-
-Keep the documentation current to maintain development velocity and onboarding effectiveness.
-
-## Success Metrics
-
-The scratchpad is successful when:
-
-- **It feels like vim** - All standard vim patterns work intuitively
-- **Nothing is lost** - All content, history, and state persists reliably
-- **It's fast** - No noticeable lag during editing or mode switches
-- **It's reliable** - Works consistently across browser sessions
-
-This is a tool for developers who want a familiar vim environment for quick notes and code snippets without the overhead of a full IDE.
+See [AGENTS.md](AGENTS.md) for architecture, conventions and development notes.

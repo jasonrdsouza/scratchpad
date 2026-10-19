@@ -6,7 +6,6 @@
  */
 
 import { Executor } from "./executor.js";
-import { getResultsRegister } from "./registers.js";
 
 /**
  * JavaScript code executor using browser's eval() function
@@ -28,9 +27,10 @@ export class JavaScriptExecutor extends Executor {
         }
 
         try {
-            // Create a safe execution context
+            // Indirect eval runs the code in global scope, so it can't see this
+            // module's locals and `var`/function declarations persist between runs.
             // Note: Using eval() in browser context - this is intentional for a scratchpad tool
-            const result = eval(code);
+            const result = (0, eval)(code);
 
             // Handle async results (promises)
             if (result && typeof result.then === "function") {
@@ -43,15 +43,4 @@ export class JavaScriptExecutor extends Executor {
             throw new Error(`JavaScript execution failed: ${error.message}`);
         }
     }
-
-    /**
-     * Get display name for this executor
-     * @returns {string} Display name
-     */
-    getDisplayName() {
-        return "JavaScript";
-    }
 }
-
-// Export convenience instance
-export const javascriptExecutor = new JavaScriptExecutor();

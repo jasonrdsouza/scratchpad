@@ -64,3 +64,18 @@ pnpm run build    # production build in dist/
 ```
 
 See [AGENTS.md](AGENTS.md) for architecture, conventions and development notes.
+
+## Deploying
+
+Pushing a `v*` tag builds the site and publishes it as a GitHub release. To install a release on the server (fish shell):
+
+```fish
+# The latest release's tag (or set it by hand, e.g. set tag v1.1.0)
+set tag (curl -fsSL https://api.github.com/repos/jasonrdsouza/scratchpad/releases/latest | string match -rg '"tag_name": *"([^"]+)"')
+
+cd /tmp
+curl -fLO https://github.com/jasonrdsouza/scratchpad/releases/download/$tag/scratchpad-$tag.tar.gz
+sudo tar --no-same-owner -xzf scratchpad-$tag.tar.gz -C /var/www/scratchpad
+```
+
+This unpacks over the existing site. Files from older releases are left behind, but they have hashed names that the new `index.html` no longer references, so they're harmless.

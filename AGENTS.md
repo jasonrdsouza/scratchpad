@@ -14,6 +14,8 @@ Development notes for working on this codebase. User-facing documentation lives 
 
 CI (`.github/workflows/build.yml`) runs `format:check`, `test` and `build` on pushes and PRs to `main`, and creates a GitHub release for `v*` tags.
 
+Releases are installed on the server (Caddy serves `/var/www/scratchpad`) by hand, with the commands in the README's "Deploying" section: download the release's `scratchpad-<tag>.tar.gz` asset and unpack it over the site directory. Keep the asset name in the workflow and the README in sync.
+
 ### Code Quality
 
 - **Run `pnpm run format` after code changes** - CI fails on unformatted code

@@ -14,12 +14,12 @@ echo "Downloading $url"
 
 # Download first, so a failed download doesn't leave the site empty
 tmp=$(mktemp)
-trap 'rm -f "$tmp"' EXIT
 curl -fsSL -o "$tmp" "$url"
 
 rm -rf "$SITE_DIR"
 mkdir -p "$SITE_DIR"
 tar --no-same-owner -xzf "$tmp" -C "$SITE_DIR"
 chmod -R a+rX "$SITE_DIR"
+rm "$tmp"
 
 echo "Installed into $SITE_DIR"

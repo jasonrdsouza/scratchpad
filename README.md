@@ -63,6 +63,8 @@ pnpm test         # tests
 pnpm run build    # production build in dist/
 ```
 
+See [AGENTS.md](AGENTS.md) for architecture, conventions and development notes.
+
 ## Deploying
 
 Pushing a `v*` tag builds the site and publishes it as a GitHub release. On the server, run [`scripts/deploy.sh`](scripts/deploy.sh) to download the latest release and install it into `/var/www/scratchpad`:
@@ -70,5 +72,3 @@ Pushing a `v*` tag builds the site and publishes it as a GitHub release. On the 
 ```sh
 sudo ./deploy.sh
 ```
-
-See [AGENTS.md](AGENTS.md) for architecture, conventions and development notes.

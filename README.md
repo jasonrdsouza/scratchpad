@@ -63,4 +63,13 @@ pnpm test         # tests
 pnpm run build    # production build in dist/
 ```
 
+## Deploying
+
+Pushing a `v*` tag builds the site and publishes it as a GitHub release. On the server, [`scripts/deploy.sh`](scripts/deploy.sh) installs the latest release (or a given tag, for rollbacks) into a versioned directory and atomically switches `/var/www/scratchpad` to it:
+
+```sh
+sudo ./deploy.sh            # latest release
+sudo ./deploy.sh v1.0.3     # a specific release
+```
+
 See [AGENTS.md](AGENTS.md) for architecture, conventions and development notes.

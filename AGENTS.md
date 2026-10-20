@@ -14,7 +14,7 @@ Development notes for working on this codebase. User-facing documentation lives 
 
 CI (`.github/workflows/build.yml`) runs `format:check`, `test` and `build` on pushes and PRs to `main`, and creates a GitHub release for `v*` tags.
 
-`scripts/deploy.sh` runs on the server (Caddy serves `/var/www/scratchpad`): it downloads a release's `scratchpad-<tag>.tar.gz` asset, unpacks it under `/var/www/scratchpad-releases/<tag>` and atomically repoints the `/var/www/scratchpad` symlink, keeping the last few releases for rollback. Keep the release asset name in the workflow and the script in sync.
+`scripts/deploy.sh` runs on the server (Caddy serves `/var/www/scratchpad`): it downloads the latest release's `.tar.gz` asset and replaces the site directory's contents with it. Keep it simple - no versioned directories or rollbacks.
 
 ### Code Quality
 
